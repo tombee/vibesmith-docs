@@ -48,7 +48,7 @@ Framework + tooling (deletable on eject):
 | `.mcp.json` | MCP server registry (auto-discovered by Cursor / Claude Code / Codex CLI). |
 | `AGENTS.md` | Tool-agnostic agent instructions + reading list. |
 | `agents/` | Project-specific agent prompts. |
-| `EJECT.md` | Five-step removal if you ever want to drop the framework. |
+| `vibesmith eject` (CLI) | One-way removal of Vibesmith — dry-run by default; `--apply` to mutate. |
 
 ## Working in the project
 
@@ -72,6 +72,14 @@ Framework + tooling (deletable on eject):
 
 ## Ejecting
 
-If you ever want to remove Vibesmith entirely, see `EJECT.md` in your
-scaffolded project. App code under `src/` has zero framework imports —
-eject is delete-the-boundary, not rewrite-the-app.
+If you ever want to remove Vibesmith entirely:
+
+```sh
+vibesmith eject              # dry-run; prints the plan
+vibesmith eject --apply      # actually mutate
+vibesmith eject --apply --purge   # also remove AGENTS.md + agents/
+```
+
+The command refuses to run with a dirty git tree so the change is
+reversible via `git checkout`. App code under `src/` has zero framework
+imports — eject is delete-the-boundary, not rewrite-the-app.
