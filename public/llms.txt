@@ -1,0 +1,52 @@
+# Vibesmith
+
+> Public docs for the Vibesmith framework — AI-augmented WebGL game
+> development on Vite + React + R3F + Three.js. Guides, cookbook,
+> anti-patterns, reference.
+
+This file is the agent-discoverable manifest of the site, following
+the emerging [llms.txt](https://llmstxt.org/) convention.
+
+## Getting started
+
+- [Introduction](https://tombee.github.io/vibesmith-docs/introduction/): what Vibesmith is + who the docs are for
+- [Quick start](https://tombee.github.io/vibesmith-docs/getting-started/quick-start/): `vibesmith init` + project layout
+
+## Cookbook
+
+- [Cookbook index](https://tombee.github.io/vibesmith-docs/cookbook/): conventions, recipe roadmap
+- [Instancing](https://tombee.github.io/vibesmith-docs/cookbook/instancing/): rendering 50+ identical objects in one draw call
+- [Animations](https://tombee.github.io/vibesmith-docs/cookbook/animations/): GLTF skeletal animations + procedural lerp / spring transforms
+- [Performance debugging](https://tombee.github.io/vibesmith-docs/cookbook/perf-debugging/): `gl.info`, attribution checklist, perf tools
+
+## Anti-patterns
+
+- [R3F anti-patterns](https://tombee.github.io/vibesmith-docs/anti-patterns/): 12 numbered entries covering recurring R3F mistakes
+
+## Reference
+
+- [Engine patterns](https://tombee.github.io/vibesmith-docs/reference/engine-patterns/): Unity-isms ↔ Three.js + R3F translation
+- [Scene construction](https://tombee.github.io/vibesmith-docs/reference/scene-construction/): Recipe → Generator → Composition pipeline
+- [Prefab system](https://tombee.github.io/vibesmith-docs/reference/prefab-system/): content units (recipe + generator + director + AI brief + preview)
+- [Material system](https://tombee.github.io/vibesmith-docs/reference/material-system/): material roles, tier capability, shader policy
+- [Performance budgets](https://tombee.github.io/vibesmith-docs/reference/performance-budgets/): Tier 0 budget table
+- [WebGL constraints](https://tombee.github.io/vibesmith-docs/reference/webgl-constraints/): WebGL 2 / WebGPU hard limits
+- [Adaptive rendering](https://tombee.github.io/vibesmith-docs/reference/adaptive-rendering/): LOW / MEDIUM / HIGH / ULTRA tier auto-scaling
+- [Renderer configuration](https://tombee.github.io/vibesmith-docs/reference/renderer-configuration/): context options, DPR, detection hooks
+- [QA strategy](https://tombee.github.io/vibesmith-docs/reference/qa-strategy/): four-tier QA + text telemetry
+- [Scenario-driven dev](https://tombee.github.io/vibesmith-docs/reference/scenario-driven-dev/): deterministic-state UX iteration substrate
+- [Director pattern](https://tombee.github.io/vibesmith-docs/reference/director-pattern/): AI-assisted content director
+- [AI assistant](https://tombee.github.io/vibesmith-docs/reference/ai-assistant/): context-aware in-browser assistant
+
+## For agents
+
+- [Agent context](https://tombee.github.io/vibesmith-docs/agents/): intent-to-doc mapping, discovery surfaces, style conventions
+
+## Source
+
+This site is generated from
+[tombee/vibesmith-docs](https://github.com/tombee/vibesmith-docs).
+Framework source (private) lives at `tombee/vibesmith`. Cookbook and
+reference docs are the canonical home for consumer-facing knowledge;
+the framework repo's `docs/` holds internal architecture artifacts
+(ADRs, roadmap, methodology, proactive-ledger).

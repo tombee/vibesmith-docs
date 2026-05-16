@@ -1,0 +1,77 @@
+---
+title: Quick start
+description: Scaffold a new Vibesmith project with `vibesmith init` and understand what lands on disk.
+---
+
+## Prerequisites
+
+- Node.js 22 (recommended; the framework's pinned toolchain).
+- `pnpm` (the scaffold writes a `pnpm-lock.yaml`; you can substitute
+  `npm` or `yarn`).
+- A sibling clone of the Vibesmith framework repo at `../vibesmith/`
+  (Phase-0 distribution; Phase-2 will publish to a registry).
+
+## Scaffold
+
+```sh
+pnpm dlx @vibesmith/framework-cli init my-game
+cd my-game
+pnpm install
+pnpm dev
+```
+
+You'll see a working R3F app with a rotating cube, a HUD overlay scene
+picker, and the Vibesmith dev shell (Hierarchy / Inspector / Console /
+Scenarios) mounted around it in dev mode. Production builds drop the
+dev shell entirely.
+
+## What just landed
+
+Application source (`src/`, zero framework imports):
+
+| Path | What |
+|---|---|
+| `src/App.tsx` | Top-level component; mounts `<Canvas>` + DOM `<Hud>`. |
+| `src/world/World.tsx` | Canvas contents; lights + active scene. |
+| `src/hud/Hud.tsx` | DOM overlay with scene picker. |
+| `src/scenes/MainScene.tsx` + `registry.ts` | Scene composer pattern. |
+| `src/state/game-store.ts` | Zustand store; one slice per concern. |
+| `src/input/use-input.ts` | Ref-based input hook (WASD + arrows + space). |
+| `src/assets/preload.ts` | `useGLTF.preload` patterns for assets. |
+
+Framework + tooling (deletable on eject):
+
+| Path | What |
+|---|---|
+| `.vibesmith/config.ts` | Framework pin + project config. |
+| `.vibesmith/manifest.json` | Installed Vibesmith extensions. |
+| `.mcp.json` | MCP server registry (auto-discovered by Cursor / Claude Code / Codex CLI). |
+| `AGENTS.md` | Tool-agnostic agent instructions + reading list. |
+| `agents/` | Project-specific agent prompts. |
+| `EJECT.md` | Five-step removal if you ever want to drop the framework. |
+
+## Working in the project
+
+| Command | What |
+|---|---|
+| `pnpm dev` | Vite dev server + HMR. |
+| `pnpm build` | Production bundle. |
+| `pnpm typecheck` | Strict TypeScript. |
+| `vibesmith doctor` | Project health check. |
+| `vibesmith add-extension <id>` | Install a standard extension. |
+| `vibesmith upgrade` | Compare framework pin vs. HEAD. |
+
+## Next steps
+
+- Browse the [**Cookbook**](/vibesmith-docs/cookbook/) for high-leverage
+  recipes (instancing, animations, perf debugging).
+- Skim [**Anti-patterns**](/vibesmith-docs/anti-patterns/) before
+  writing scene-graph code; #1–#4 cover most stutter / leak bugs.
+- Read the [**Reference**](/vibesmith-docs/reference/) for WebGL limits,
+  performance budgets, and engine-pattern translation guides.
+
+## Ejecting
+
+If you ever want to remove Vibesmith entirely, see `EJECT.md` in your
+scaffolded project. App code under `src/` has zero framework imports —
+eject is delete-the-boundary, not rewrite-the-app.
