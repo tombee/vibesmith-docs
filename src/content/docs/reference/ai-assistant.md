@@ -8,6 +8,21 @@ description: '> **Framework. Game-agnostic.** Defines the framework''s in-browse
 > context-aware AI help — modify content, write extensions, propose
 > director interventions, answer questions — without leaving the
 > dev tooling. The director loop, exposed as a product feature.
+>
+> **In flight.** This surface is being expanded into a **four-tier
+> interaction model**: proactive recommendations (background), a
+> cmd+P quick-action palette (one-shot context-aware prompts), a
+> BYOK first-party chat panel (for users with only an LLM API
+> key, no paid coding-assistant sub), and external coding
+> assistants driving the framework via MCP (Claude Code,
+> Copilot, Codex). Backed by a shared task-context-contract and
+> a curated knowledge-pack surface that lets the framework plug
+> gaps where LLMs underperform on specialised domains (shaders,
+> ECS, WebGPU). All AI surfaces are token-budgeted by design:
+> aggressive prompt caching, deferred-by-default tool schemas,
+> visible per-call token meter (input / output / cache-hit only —
+> no dollar conversion because subscription assistants don't
+> publish $/tok rates). Slices roll in across 2026.
 
 ## What this is
 
