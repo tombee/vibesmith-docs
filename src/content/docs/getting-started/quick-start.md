@@ -64,6 +64,7 @@ Framework + tooling (deletable on eject):
 | `vibesmith upgrade` | Pin-drift report + interactive bump. Auto-detects project shape: `vibesmith.toml` projects (caret semver pin), SHA-pinned consumers via `.vibesmith/config.ts` `frameworkRef`. Lists the commit subjects landing in the range before prompting. Flags: `--to <ref>` (target a non-HEAD ref), `--yes`, `--dry-run`, `--json`. |
 | `vibesmith asset-pipeline optimize <path>` | Run the glTF optimize pipeline (drop unused channels, quantise, optionally Draco) on a single `.glb` or directory tree. Accepts `--tier LOW\|MEDIUM\|HIGH\|ULTRA` to apply the per-tier matrix (LOW/MEDIUM/HIGH add Draco; ULTRA preserves precision). `--out <path>` chooses the output; `--no-cache` reprocesses fresh outputs. |
 | `vibesmith asset-pipeline compress-textures <path>` | Re-encode embedded textures to WebP via per-slot presets (`albedo` lossy, `normal`/`orm` lossless, `emissive`/`ui` lossy). `--max-axis <pixels>` applies an aspect-preserving Lanczos3 resize (useful for per-tier variants). |
+| `vibesmith asset-pipeline pack-orm <dir>` | Walk `<dir>` for `<base>.{ao,rough,metal}.png` triplets and pack each into `<base>.orm.png` (R=AO, G=Roughness, B=Metalness). Accepts variant suffixes (`occlusion`/`roughness`/`metalness`/`metallic`). Sidecar `<base>.orm.json` skips or overrides per-triplet. |
 
 `vibesmith doctor` detects two project shapes:
 
