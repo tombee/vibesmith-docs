@@ -3,17 +3,109 @@ title: 'Animations'
 description: 'Two distinct problems, two distinct solutions:'
 ---
 
-Two distinct problems, two distinct solutions:
+Three distinct problems, three distinct solutions:
 
 1. **Authored skeletal / morph animations** baked into a GLTF
-   asset (idle, walk, run, attack, …) → Three's `AnimationMixer`
-   + drei's `useAnimations`.
-2. **Procedural transforms** with no animation data (camera
+   asset, driven by a state machine with parameter-driven
+   blends → **`<Animator>`** from
+   `@vibesmith/animation-runtime` (the framework primitive).
+2. **One-off authored animations** without a state machine —
+   a flag waving, a door swinging — → drei's `useAnimations`.
+3. **Procedural transforms** with no animation data (camera
    moves, UI tweens, entity reactions, easing-driven motion) →
    `useFrame` with lerp or a spring helper.
 
-Don't mix the two — authored animations come from the asset
-pipeline; procedural motion is your code.
+Reach for `<Animator>` whenever a character needs to coordinate
+multiple clips based on gameplay state (locomotion, combat,
+emotes). Use drei's `useAnimations` for the simple cases. Use
+`useFrame` lerp for procedural motion.
+
+## State-driven character animation (`<Animator>`)
+
+When a character has more than one clip and needs to transition
+between them based on gameplay state, reach for the framework's
+animation runtime. It owns the state graph + parameter store +
+blend tree so consumer code stays declarative:
+
+```tsx
+import { Canvas } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
+import { Animator } from '@vibesmith/animation-runtime/react';
+import {
+  defineAnimationGraph,
+  blend1D,
+  clipState,
+} from '@vibesmith/animation-runtime';
+import { defineGameScript } from '@vibesmith/runtime';
+import { useMemo } from 'react';
+
+const characterGraph = defineAnimationGraph({
+  id: 'character',
+  clips: {
+    idle: 'character/idle',
+    walk: 'character/walk',
+    run:  'character/run',
+    jump: 'character/jump',
+  },
+  parameters: {
+    speed:    { type: 'float', default: 0, range: [0, 1] },
+    onGround: { type: 'bool',  default: true },
+  },
+  states: [
+    blend1D('locomotion', 'speed', [
+      { at: 0.0, clip: 'idle' },
+      { at: 0.5, clip: 'walk' },
+      { at: 1.0, clip: 'run'  },
+    ]),
+    clipState('airborne', 'jump'),
+  ],
+  transitions: (t) => [
+    t.from('locomotion').to('airborne').when((p) => p.onGround.eq(false)).fade(0.15),
+    t.from('airborne').to('locomotion').when((p) => p.onGround).fade(0.20),
+  ],
+  entry: 'locomotion',
+});
+
+defineGameScript({
+  id: 'character-controller',
+  onTick: (ctx) => {
+    const animator = ctx.animator?.('character');
+    if (!animator) return;
+    animator.set('speed', currentSpeed(ctx));
+    animator.set('onGround', isGrounded(ctx));
+  },
+});
+
+function Character() {
+  const { scene, animations } = useGLTF('/character.glb');
+  const clips = useMemo(
+    () => Object.fromEntries(animations.map((a) => [a.name.toLowerCase(), a])),
+    [animations],
+  );
+  return (
+    <>
+      <primitive object={scene} />
+      <Animator object={scene} graph={characterGraph} clips={clips} />
+    </>
+  );
+}
+```
+
+Why over `useAnimations`:
+
+- **Predicate-driven transitions** — `(p) => p.onGround.eq(false)`
+  instead of an imperative `useEffect` walking action state.
+- **Blend trees** — idle/walk/run mixes by `speed` without
+  hand-bookkeeping the action weights.
+- **`ctx.animator(id)` for parameter writes** — game-script ticks
+  drive animation state through the same `ctx` that owns input
+  and physics, no React re-renders required.
+- **Scenario capture is automatic** — the animator's logical
+  state lands in scenario snapshots; bug repros replay the exact
+  blend-and-transition state.
+
+See the [animation-runtime reference](../reference/animation-runtime.md)
+for the full surface.
 
 ## GLTF skeletal animations (drei `useAnimations`)
 
