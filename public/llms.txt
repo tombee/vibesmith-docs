@@ -33,7 +33,8 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 - [Performance budgets](https://tombee.github.io/vibesmith-docs/reference/performance-budgets/): Tier 0 budget table
 - [WebGL constraints](https://tombee.github.io/vibesmith-docs/reference/webgl-constraints/): WebGL 2 / WebGPU hard limits
 - [Adaptive rendering](https://tombee.github.io/vibesmith-docs/reference/adaptive-rendering/): LOW / MEDIUM / HIGH / ULTRA tier auto-scaling
-- [Renderer configuration](https://tombee.github.io/vibesmith-docs/reference/renderer-configuration/): context options, DPR, detection hooks
+- [Renderer configuration](https://tombee.github.io/vibesmith-docs/reference/renderer-configuration/): backend preference, context options, DPR, detection hooks, custom-shader policy
+- [Renderer feature matrix](https://tombee.github.io/vibesmith-docs/reference/renderer-feature-matrix/): per-feature WebGL 2 / WebGPU support + graceful-degrade / feature-gate / backend-required patterns
 - [QA strategy](https://tombee.github.io/vibesmith-docs/reference/qa-strategy/): four-tier QA + text telemetry
 - [Scenario-driven dev](https://tombee.github.io/vibesmith-docs/reference/scenario-driven-dev/): deterministic-state UX iteration substrate
 - [Director pattern](https://tombee.github.io/vibesmith-docs/reference/director-pattern/): AI-assisted content director

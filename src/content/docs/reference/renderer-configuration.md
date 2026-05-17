@@ -9,9 +9,15 @@ description: '> **Framework. Game-agnostic.** Pins what each consuming game wire
 > platform limits, not configurable) and
 > [`adaptive-rendering.md`](adaptive-rendering.md) (tier mechanism,
 > already game-overridable via `render-tiers.json`). This doc covers
-> **everything else** — context-creation options, DPR policy,
-> detection extension points, output pipeline, and the
-> runtime-adjustment policy knobs.
+> **everything else** — backend preference, context-creation
+> options, DPR policy, detection extension points, output pipeline,
+> runtime-adjustment policy knobs, and the custom-shader policy.
+>
+> Per [`adr/0005-dual-renderer-backend.md`](adr/0005-dual-renderer-backend.md),
+> the framework defaults to WebGPU with WebGL 2 fallback and
+> manages both backends symmetrically. Per-backend feature
+> support lives in
+> [`renderer-feature-matrix.md`](renderer-feature-matrix.md).
 
 The framework picks aggressive, opinionated defaults for every knob
 on this page. A consumer that wants the defaults writes zero
@@ -29,10 +35,11 @@ can't influence; the rest belong to the consumer.
 
 | Bucket | Where it lives | Examples |
 |---|---|---|
-| **Platform-fixed** (not configurable) | `webgl-constraints.md` | WebGL 2 minimum guarantees, browser tab memory ceiling, draw-call submit overhead |
+| **Platform-fixed** (not configurable) | `webgl-constraints.md` | WebGL 2 / WebGPU minimum guarantees, browser tab memory ceiling, draw-call submit overhead |
+| **Backend preference** (this doc) | `vibesmith.toml` `[renderer]` | WebGPU / WebGL 2 selection, per-platform overrides |
 | **Tier-driven** (per-game override of the tier table) | `render-tiers.json` | Shadow technique, post-FX chain, particle density, frame target, dynamic-res range |
-| **Renderer instance** (this doc) | `renderer-config.json` | WebGLRenderer construction args, DPR cap, output color space, tone mapping, detection bypass, runtime adjustment policy |
-| **Detection extension** (this doc) | `renderer-config.json` + optional consumer code modules | GPU classification overrides, capability gates, boot probe scene, floor threshold |
+| **Renderer instance** (this doc) | `renderer-config.json` | Renderer construction args, DPR cap, output color space, tone mapping, detection bypass, runtime adjustment policy, custom-shader policy |
+| **Detection extension** (this doc) | `renderer-config.json` + optional consumer code modules | GPU classification overrides, capability gates, required features, boot probe scene, floor threshold |
 
 The renderer-instance bucket exists because some choices are
 *per-game*, not *per-device*: a kiosk build wants
@@ -43,32 +50,109 @@ belong in the tier table.
 
 ---
 
-## WebGLRenderer construction options
+## Backend preference — the `[renderer]` table
 
-Passed to `new THREE.WebGLRenderer({…})` once at boot. Cannot be
-changed afterward without recreating the context. The framework
-sets defaults that work for a typical full-window game; a consumer
-overrides for embedded / kiosk / screenshot / power-sensitive
-scenarios.
+Per [`adr/0005-dual-renderer-backend.md`](adr/0005-dual-renderer-backend.md),
+the framework defaults to WebGPU with automatic WebGL 2 fallback.
+The default behaves correctly on every platform without
+configuration; consumers only set this table for explicit reasons.
+Lives in **`vibesmith.toml`** (not `renderer-config.json`) because
+it's a project-level identity choice that the project contract
+documents and `vibesmith doctor` consults.
 
-| Option | Framework default | When a consumer overrides |
-|---|---|---|
-| `antialias` | `false` | The post-FX chain owns AA (FXAA/SMAA in MEDIUM+, none in LOW). Override `true` only for tier configurations that skip post-FX entirely (rare — typically embedded marketing scenes). |
-| `alpha` | `false` | Override `true` when the canvas is layered over HTML/CSS content (marketing pages, embeds, dashboards). Costs an extra blend pass. |
-| `premultipliedAlpha` | `true` | Almost never overridden. Standard browser compositing assumption. |
-| `preserveDrawingBuffer` | `false` | Override `true` for screenshot-share features or video-capture flows. Has real perf cost (~5-15%); never enable globally if the feature is only used in a "share" modal. |
-| `powerPreference` | `'high-performance'` | Override `'low-power'` for ambient / idle-friendly embeds (dashboards, marketing). Override `'default'` for laptops on battery if telemetry shows thermal complaints. |
-| `failIfMajorPerformanceCaveat` | `false` | Override `true` only if the consumer prefers an explicit error on software-rendered contexts over running the LOW tier on them. |
-| `precision` | `'highp'` | Almost never overridden. Some old mobile GPUs report `highp` support but degrade gracefully; the framework relies on this. |
-| `stencil` | `true` | Override `false` to save a small amount of VRAM if no post-FX effect uses the stencil buffer. |
-| `depth` | `true` | Almost never overridden. |
-| `logarithmicDepthBuffer` | `false` | Override `true` for very-large-world games where a single skinned mesh and a distant terrain coexist (z-fighting at far clip). Costs a fragment-shader instruction; not free. |
+```toml
+[renderer]
+# Backend preference. Default "auto".
+# - "auto" / "webgpu":  prefer WebGPU; fall back to WebGL 2 silently.
+# - "webgpu-required":  refuse to boot without WebGPU. For kiosk /
+#                       known-hardware builds. Boots to an
+#                       unsupported-device message on non-WebGPU
+#                       clients.
+# - "webgl2":           force WebGL 2 even when WebGPU is available.
+#                       Useful for: known mobile-WebGPU bugs in the
+#                       consumer's content; legacy asset pipelines;
+#                       debugging.
+prefer = "auto"
+
+# Optional per-platform overrides. Rarely needed — auto-fallback
+# handles every platform correctly without this. Use only when
+# you have a specific reason (a known content bug on one backend,
+# a CI matrix constraint, etc.). Values: same as `prefer`.
+[renderer.platform]
+# tauri-linux   = "webgl2"
+# tauri-android = "webgl2"
+# browser       = "auto"
+```
+
+### When to override
+
+| Value | Pick when |
+|---|---|
+| `"auto"` *(default)* | Almost always. Framework picks the best available backend per platform; falls back silently when an adapter is absent or rejects |
+| `"webgpu-required"` | Building for known hardware where WebGPU is guaranteed (kiosk / demo / internal); want a clean failure mode on non-WebGPU clients |
+| `"webgl2"` | Reproducing a WebGL-2-only consumer bug; capacity for known WebGPU mobile bugs your content triggers; legacy custom-shader code that hasn't migrated to TSL |
+
+### Runtime detection flow
+
+`@vibesmith/renderer.detectRenderer(config)` runs at boot:
+
+1. Read `[renderer]` preference + platform overrides.
+2. If preference allows WebGPU: probe `navigator.gpu`,
+   `requestAdapter()`. If absent or rejects → fall back to WebGL 2.
+3. If `"webgpu-required"` and WebGPU missing: return
+   `{ kind: 'unsupported', reason }`. Boot screen shows the
+   unsupported-device message.
+4. If `"webgl2"`: skip the WebGPU probe entirely.
+5. Cache the resolved backend in IndexedDB keyed by GPU string +
+   project name + framework version. Re-probe when any key
+   changes (or when `[renderer]` preference changes).
+
+Probe cost is tens of ms; not a meaningful first-load delay.
+
+### Dev-shell override
+
+The dev shell exposes a backend toggle (`Ctrl+Shift+G` panel) that
+forces a specific backend regardless of `vibesmith.toml`. Persists
+in IndexedDB. **Triggers a full reload** to take effect. Used for
+debugging ("does this repro on WebGL 2 too?"). Not a player-facing
+option. Mid-session backend swap without reload is out of scope —
+the context can't switch in place.
+
+---
+
+## Renderer construction options
+
+Passed to Three.js's renderer constructor once at boot — to
+`WebGPURenderer` on the WebGPU path, to `WebGLRenderer` on the
+WebGL 2 path. Three.js's unified `WebGPURenderer` (`three/webgpu`)
+accepts the same options on either backend and routes them
+appropriately. Cannot be changed afterward without recreating the
+context. The framework sets defaults that work for a typical
+full-window game; a consumer overrides for embedded / kiosk /
+screenshot / power-sensitive scenarios.
+
+| Option | Framework default | Backends | When a consumer overrides |
+|---|---|---|---|
+| `antialias` | `false` | both | The post-FX chain owns AA (FXAA/SMAA in MEDIUM+, none in LOW). Override `true` only for tier configurations that skip post-FX entirely (rare — typically embedded marketing scenes). |
+| `alpha` | `false` | both | Override `true` when the canvas is layered over HTML/CSS content (marketing pages, embeds, dashboards). Costs an extra blend pass. |
+| `premultipliedAlpha` | `true` | both | Almost never overridden. Standard browser compositing assumption. |
+| `preserveDrawingBuffer` | `false` | WebGL 2 only | Override `true` for screenshot-share features or video-capture flows. Has real perf cost (~5-15%); never enable globally if the feature is only used in a "share" modal. On WebGPU the equivalent is `canvas.toBlob()` after `render()`; the framework abstracts both via `handle.captureFrame()`. |
+| `powerPreference` | `'high-performance'` | both | Override `'low-power'` for ambient / idle-friendly embeds (dashboards, marketing). Override `'default'` for laptops on battery if telemetry shows thermal complaints. |
+| `failIfMajorPerformanceCaveat` | `false` | WebGL 2 only | Override `true` only if the consumer prefers an explicit error on software-rendered contexts over running the LOW tier on them. On WebGPU the adapter-request rejection serves the same role. |
+| `precision` | `'highp'` | WebGL 2 only | Almost never overridden. Some old mobile GPUs report `highp` support but degrade gracefully; the framework relies on this. WebGPU's WGSL doesn't carry precision qualifiers. |
+| `stencil` | `true` | both | Override `false` to save a small amount of VRAM if no post-FX effect uses the stencil buffer. |
+| `depth` | `true` | both | Almost never overridden. |
+| `logarithmicDepthBuffer` | `false` | both | Override `true` for very-large-world games where a single skinned mesh and a distant terrain coexist (z-fighting at far clip). Costs a fragment-shader instruction; not free. |
+| `forceWebGL` | `false` | wrapper-level | Set `true` to instantiate `WebGLRenderer` directly even when WebGPU is available. Equivalent to `[renderer].prefer = "webgl2"`. Useful for in-code A/B testing. |
 
 The framework wraps the construction in
-`createRenderer(config: RendererConfig): RendererHandle` — consumers
-never see the raw Three.js constructor. This is the
-[abstraction-discipline](abstraction-discipline.md) boundary: the
-renderer wrapper is Tier A; only it imports `three`.
+`createRenderer(config: RendererConfig): RendererHandle` —
+consumers never see the raw Three.js constructor. The handle
+exposes a backend-normalised surface (`handle.renderer`,
+`handle.backend`, `handle.capabilities`, `handle.info()`). This is
+the [abstraction-discipline](abstraction-discipline.md) boundary:
+the renderer wrapper is Tier A; only it imports `three` /
+`three/webgpu`.
 
 ---
 
@@ -177,22 +261,49 @@ make first-load worse for everyone.
 
 ### 3. Capability gates
 
-Default gates: WebGL 2, half-float textures, anisotropic filtering,
-depth textures, EXT_color_buffer_float. A consumer may add required
-extensions:
+The framework gates per backend. WebGL 2 uses extension names;
+WebGPU uses adapter `features` + `limits`.
+
+**WebGL 2 default gates:** WebGL 2 itself, half-float textures,
+anisotropic filtering, depth textures, `EXT_color_buffer_float`.
+A consumer may add required + preferred extensions:
 
 ```json
 {
   "detection": {
-    "requiredExtensions": ["WEBGL_compressed_texture_astc"],
-    "preferredExtensions": ["KHR_parallel_shader_compile"]
+    "webgl2": {
+      "requiredExtensions": ["WEBGL_compressed_texture_astc"],
+      "preferredExtensions": ["KHR_parallel_shader_compile"]
+    }
   }
 }
 ```
 
-Required-missing = drop a tier (or fail the floor probe and show
-the unsupported-device message). Preferred-missing = log to
-telemetry, don't change behavior.
+**WebGPU default gates:** none beyond the minimum WebGPU adapter.
+Consumers can require features (`timestamp-query`,
+`texture-compression-bc`, `shader-f16`, etc.) or limits
+(`maxTextureDimension2D`, `maxStorageBufferBindingSize`, etc.):
+
+```json
+{
+  "detection": {
+    "webgpu": {
+      "requiredFeatures": ["timestamp-query"],
+      "requiredLimits": {
+        "maxTextureDimension2D": 16384,
+        "maxStorageBufferBindingSize": 268435456
+      },
+      "preferredFeatures": ["texture-compression-bc", "shader-f16"]
+    }
+  }
+}
+```
+
+Required-missing on the active backend = drop a tier (or fail the
+floor probe and show the unsupported-device message).
+Preferred-missing = log to telemetry, don't change behavior. The
+two backend-specific blocks are independent — only the one
+matching the resolved backend applies at boot.
 
 ### 4. Floor threshold per game
 
@@ -232,8 +343,10 @@ bypass it:
 
 The `rationale` field is mandatory; it's the durable answer to "why
 isn't auto-detect running here?". Bypass disables capability gating
-*for tier selection*, but capability checks for `requiredExtensions`
-still run — a missing extension still blocks boot.
+*for tier selection*, but per-backend capability checks
+(`requiredExtensions` on WebGL 2, `requiredFeatures` / `requiredLimits`
+on WebGPU) still run — a missing required capability still blocks
+boot.
 
 Bypass also disables the runtime adjustment loop unless
 `detection.bypass.allowRuntimeAdjustment` is `true`. Most kiosk /
@@ -288,9 +401,17 @@ Zod-validated; missing keys fall back to framework defaults):
   "detection": {
     "probeScene": "./src/renderer/probeScene.ts",
     "probeFrames": 30,
-    "requiredExtensions": [],
-    "preferredExtensions": ["KHR_parallel_shader_compile"],
     "floorThresholdMs": 50,
+    "webgl2": {
+      "requiredExtensions": [],
+      "preferredExtensions": ["KHR_parallel_shader_compile"]
+    },
+    "webgpu": {
+      "requiredFeatures": [],
+      "preferredFeatures": ["texture-compression-bc", "shader-f16"],
+      "requiredLimits": {},
+      "preferredLimits": {}
+    },
     "bypass": {
       "enabled": false,
       "forcedTier": null,
@@ -314,11 +435,30 @@ Zod-validated; missing keys fall back to framework defaults):
   },
   "materials": {
     "precompileOnSceneLoad": true,
-    "allowCustomShaders": "always",
+    "allowCustomShaders": "always-tsl",
     "warnOnUniqueInstanceCount": 100
   }
 }
 ```
+
+### Custom shader policy
+
+The `materials.allowCustomShaders` value controls what shader
+authoring the framework accepts. Per
+[`renderer-feature-matrix.md`](renderer-feature-matrix.md), raw
+GLSL `ShaderMaterial` doesn't run on WebGPU; the canonical custom
+path is TSL.
+
+| Value | Behaviour |
+|---|---|
+| `"always-tsl"` *(default)* | Custom materials must use `NodeMaterial` + TSL. Both backends produce identical output. Raw `ShaderMaterial` is a hard error at scene load. |
+| `"raw-glsl-and-wgsl"` | Escape hatch. Consumer takes responsibility for their own dual implementation (or for using `[renderer].prefer = "webgl2"`). The framework warns when a `ShaderMaterial` is loaded on a WebGPU backend. |
+| `"forbidden"` | No custom materials. Library roles only. Useful for tightly-controlled tier targets / kiosk builds. |
+
+The policy is global per project; per-material exceptions are
+discouraged. Move common patterns into the
+[`recipe-canon.md`](recipe-canon.md) rather than scattering
+escape-hatch usage.
 
 The `materials.*` keys are global policy; the per-game material
 library itself lives in `packages/content/data/materials.json` (see
@@ -356,12 +496,18 @@ invalid config fails fast with a clear error.
 3. **DPR clamp logic** wired through the tier slot system — v0.5
 4. **GPU classification override merge** + first base table — v0.5
 5. **Probe scene override registration** — v1
-6. **Capability gate `requiredExtensions` enforcement** — v1
-7. **Detection bypass + rationale telemetry** — v1
-8. **Runtime adjustment policy knobs** wired through `FrameMonitor`
+6. **Backend detection** — `detectRenderer()` probes WebGPU,
+   falls back to WebGL 2, persists choice — v0
+7. **Capability gate enforcement** — per-backend
+   (`requiredExtensions` on WebGL 2, `requiredFeatures` /
+   `requiredLimits` on WebGPU) — v1
+8. **Detection bypass + rationale telemetry** — v1
+9. **Runtime adjustment policy knobs** wired through `FrameMonitor`
    — v1
-9. **Schema validation error reporting** with actionable messages
-   (which key, which file, expected shape) — v1
+10. **Schema validation error reporting** with actionable messages
+    (which key, which file, expected shape) — v1
+11. **Custom-shader policy enforcement** — TSL validation at
+    scene load — v1
 
 ---
 
@@ -381,3 +527,9 @@ invalid config fails fast with a clear error.
   the renderer wrapper feeds into
 - [`reproducibility.md`](reproducibility.md) — `renderer-config.json`
   is in git; same config from a clean clone = same renderer setup
+- [`renderer-feature-matrix.md`](renderer-feature-matrix.md) —
+  per-feature support on each backend
+- [`adr/0005-dual-renderer-backend.md`](adr/0005-dual-renderer-backend.md)
+  — the dual-backend decision
+- [`project-contract.md`](project-contract.md) — where the
+  `[renderer]` table fits in `vibesmith.toml`

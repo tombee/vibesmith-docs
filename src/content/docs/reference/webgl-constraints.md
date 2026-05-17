@@ -16,37 +16,45 @@ plan around them rather than chasing per-platform exceptions.
 
 ---
 
-## Render API choice — WebGL 2 baseline, WebGPU optional uplift
+## Render API choice — both backends, framework-managed
 
-**WebGL 2** is the baseline. Universally available since 2018 on
-desktop, since iOS Safari 15 (Sept 2021) on mobile. Apple Silicon
-Macs, Steam Deck (Chromium-based browsers), every modern Android.
-Three.js's `WebGLRenderer` runs on it without code changes from
-WebGL 1.
+**Both WebGL 2 and WebGPU are first-class.** The framework defaults
+to **WebGPU when available** and falls back to **WebGL 2**
+automatically when the adapter is absent — no consumer code
+change. Per [`adr/0005-dual-renderer-backend.md`](adr/0005-dual-renderer-backend.md):
 
-**WebGPU** is the uplift path. Three.js has a `WebGPURenderer` and
-the API is shipping in Chrome / Edge stable, Firefox Nightly, Safari
-TP. Production-readiness for an MMO target is still ~2026 — coverage
-isn't universal, drivers are uneven, and the API surface in Three.js
-is younger. We design the abstraction-discipline wrapper around the
-renderer (`<Composition data={…} />` consumes typed compositions,
-not raw `Object3D`) so swapping renderer backends remains tractable
-when WebGPU clears the bar.
+- **WebGL 2** is the universal baseline. Available since 2018 on
+  desktop, since iOS Safari 15 (Sept 2021) on mobile, in every
+  WebView Tauri ever uses, on every modern Android.
+- **WebGPU** is the framework default for new projects. Stable in
+  Chrome / Edge / Firefox / Safari 26+, on Tauri's Windows +
+  macOS 26+ + iOS 26+. Linux WebKitGTK and Android System WebView
+  don't yet expose it — those silently fall back.
 
-**What WebGL 2 cannot do** (these define our ceiling):
+The choice happens at boot via the `[renderer]` table in
+`vibesmith.toml` (see [`renderer-configuration.md`](renderer-configuration.md));
+detection + fallback flow live in `@vibesmith/renderer`. Per-
+feature support is in
+[`renderer-feature-matrix.md`](renderer-feature-matrix.md). This
+doc covers the **hard platform limits** both backends sit inside.
 
-| Feature | Status | Workaround if needed |
-|---|---|---|
-| Compute shaders | Not supported | Move work to CPU + Workers, or wait for WebGPU |
-| Bindless textures | Not supported | Texture atlases / arrays |
-| Indirect drawing | Limited (no MultiDrawIndirect) | CPU-side batching |
-| Mesh shaders | Not supported | Conventional vertex pipeline |
-| Ray tracing | Not supported | Screen-space approximations (SSAO, SSR) |
-| Geometry shaders | Not supported | Instanced meshes + vertex displacement |
-| Tessellation shaders | Not supported | Pre-tessellated LODs |
-| Multi-thread rendering | Single GPU context, main-thread only | Workers handle CPU work; rendering stays main-thread |
-| 64-bit float | Not supported in shaders | 32-bit float; pack high-precision values into pairs |
-| Shared GPU memory across tabs | No | Each tab is sandboxed; bgs throttled by browser |
+**What WebGL 2 cannot do** (these define the LOW/MEDIUM-tier
+ceiling and the Tauri-Linux / Tauri-Android ceiling):
+
+| Feature | WebGL 2 | WebGPU | Framework approach |
+|---|---|---|---|
+| Compute shaders | Not supported | Supported | Pattern A graceful-degrade or Pattern B feature gate per [feature matrix](renderer-feature-matrix.md) |
+| Bindless textures | Not supported | Limited | Texture atlases / arrays for both |
+| Indirect drawing | Limited (no MultiDrawIndirect) | Full | Pattern A for crowd / culling |
+| Mesh shaders | Not supported | Not yet shipping | Conventional vertex pipeline; revisit when WebGPU ships |
+| Ray tracing | Not supported | Not exposed | Screen-space approximations (SSAO, SSR) for both |
+| Geometry shaders | Not supported | Not exposed | Instanced meshes + vertex displacement |
+| Tessellation shaders | Not supported | Not exposed | Pre-tessellated LODs |
+| Multi-thread rendering | Single GPU context, main-thread | Same single-context | Workers handle CPU work; rendering stays main-thread |
+| 64-bit float in shaders | Not supported | Limited (`shader-f64` feature) | 32-bit float; pack high-precision values into pairs |
+| Shared GPU memory across tabs | No | No | Each tab sandboxed; backgrounds throttled by browser |
+| Storage textures | Not supported | Supported | Pattern B feature gate |
+| Timestamp queries | Not supported | `timestamp-query` feature | `caps.timestampQuery` |
 
 ---
 
@@ -79,6 +87,54 @@ see `apps/client/src/diagnostics/captureGpuInfo.ts` (planned).
 The runtime queries these on boot and routes the tier choice; an
 adaptive renderer that demands more than the device offers degrades
 visibly (missing reflections, smaller atlases) but doesn't crash.
+
+---
+
+## Hard numeric limits (WebGPU required minimums)
+
+WebGPU specifies a different limit surface than WebGL 2 — limits
+are queried per-adapter via `adapter.limits` and per-device via
+`device.limits`, and consumers can declare `requiredLimits` at
+device-creation time. These are the **required minimums** per the
+WebGPU spec. Real adapters typically expose much more.
+
+| Limit | Required minimum | Typical desktop | Implication |
+|---|---|---|---|
+| `maxTextureDimension2D` | 8192 | 16384 | Asset pipeline output ≤8K for WebGPU; ≤2K for the shared WebGL 2 path |
+| `maxTextureDimension3D` | 2048 | 2048 | Volume textures viable on WebGPU; not on WebGL 2 |
+| `maxTextureArrayLayers` | 256 | 2048 | Texture-array atlases comparable |
+| `maxBindGroups` | 4 | 8 | Bind-group budget per draw |
+| `maxBindGroupsPlusVertexBuffers` | 24 | 32 | |
+| `maxBindingsPerBindGroup` | 1000 | 1000 | Per-group resource budget |
+| `maxDynamicUniformBuffersPerPipelineLayout` | 8 | 8 | |
+| `maxDynamicStorageBuffersPerPipelineLayout` | 4 | 8 | |
+| `maxSampledTexturesPerShaderStage` | 16 | 16-128 | Per-shader texture binds |
+| `maxStorageBuffersPerShaderStage` | 8 | 10-30 | Storage buffers (compute) per stage |
+| `maxStorageTexturesPerShaderStage` | 4 | 4-8 | Storage-texture writes (Pattern B) |
+| `maxUniformBuffersPerShaderStage` | 12 | 12 | UBO budget per stage |
+| `maxUniformBufferBindingSize` | 64 KB | 64 KB | Larger than WebGL 2 (16 KB minimum) |
+| `maxStorageBufferBindingSize` | 128 MB | 1 GB+ | Compute working sets |
+| `maxVertexBuffers` | 8 | 8 | |
+| `maxVertexAttributes` | 16 | 16 | Matches WebGL 2 |
+| `maxComputeWorkgroupStorageSize` | 16 KB | 32 KB | Compute kernel shared memory |
+| `maxComputeInvocationsPerWorkgroup` | 256 | 256-1024 | Compute kernel dispatch size |
+| `maxComputeWorkgroupSizeX/Y/Z` | 256 / 256 / 64 | 1024 / 1024 / 64 | Compute kernel dims |
+| `maxComputeWorkgroupsPerDimension` | 65535 | 65535+ | Dispatch grid dims |
+
+Optional features (consumer opts in via `requiredFeatures`):
+
+| Feature | When useful |
+|---|---|
+| `timestamp-query` | GPU-side profiling; surfaced via `caps.timestampQuery` |
+| `texture-compression-bc` | Desktop-quality compressed textures |
+| `texture-compression-etc2` | Mobile-quality compressed textures |
+| `texture-compression-astc` | High-quality compressed textures (Apple Silicon) |
+| `shader-f16` | Half-precision shader math |
+| `indirect-first-instance` | Indirect drawing with base instance |
+| `float32-filterable` | Linear filtering on f32 textures |
+
+The framework queries these on adapter request; missing required
+features fail boot the same way missing WebGL 2 extensions do.
 
 ---
 
@@ -286,3 +342,7 @@ Revisit this doc when:
 - [`renderer-configuration.md`](renderer-configuration.md) — the
   consumer-facing knobs (context options, DPR, detection extension
   points) that live above these platform-fixed limits
+- [`renderer-feature-matrix.md`](renderer-feature-matrix.md) —
+  per-feature support on each backend + fallback patterns
+- [`adr/0005-dual-renderer-backend.md`](adr/0005-dual-renderer-backend.md)
+  — the dual-backend decision context

@@ -100,6 +100,17 @@ The matrix interacts with `adaptive-rendering.md`'s tier slots:
 that fill these material slots; the **material slot** here controls
 *which slots even exist*.
 
+**Backend constraint:** every material class in this table runs
+on both WebGL 2 and WebGPU. A role can additionally declare a
+`backendConstraint` field (`"webgpu" | "webgl2"`) on a per-tier
+basis for materials that depend on compute or storage textures —
+e.g., a procedural-displaced terrain material that uses a compute-
+written heightmap. Constrained materials follow the Pattern B
+gate from [`renderer-feature-matrix.md`](renderer-feature-matrix.md):
+the role falls back to its sibling material when the active
+backend doesn't support it. Most roles don't need this; the field
+defaults absent (= both backends).
+
 ---
 
 ## The material library shape
@@ -241,31 +252,38 @@ catalogue.
 
 ## Custom shader policy
 
-Custom GLSL is a sharp tool. The framework's policy:
+Per [`adr/0005-dual-renderer-backend.md`](adr/0005-dual-renderer-backend.md),
+the framework runs both WebGPU and WebGL 2; the canonical custom-
+material path is **TSL** (Three Shader Language), which transpiles
+to WGSL on WebGPU and GLSL ES 3.00 on WebGL 2. Raw GLSL
+`ShaderMaterial` runs only on WebGL 2.
 
-| Approach | When to use | Coupling |
-|---|---|---|
-| **Material library role** (no GLSL) | Default. Any visual that the role catalogue + parameters can express. | Tier A (boundary-only) |
-| **`onBeforeCompile` hook on standard material** | Small additions to a standard PBR shader (vertex displacement for grass wind, UV scrolling for water). | Tier B (touches Three.js internals; must survive Three minor bumps) |
-| **`NodeMaterial` graph** (Three r158+) | Preferred over `onBeforeCompile` for new work. Declarative, survives Three.js updates, future-aligned with WebGPU's TSL. | Tier A (declarative, stable surface) |
-| **Full `ShaderMaterial` / `RawShaderMaterial`** | Effects that don't fit the PBR shader at all (post-FX, custom particle systems, screen-space tricks). | Tier C (own the whole shader; survive renderer-API changes manually) |
+| Approach | When to use | Backend coverage | Coupling |
+|---|---|---|---|
+| **Material library role** (no shader code) | Default. Any visual that the role catalogue + parameters can express. | Both | Tier A (boundary-only) |
+| **`NodeMaterial` + TSL** | Preferred for any custom material. Declarative, survives Three.js updates, runs on both backends from one source. | Both | Tier A (declarative, stable surface) |
+| **`onBeforeCompile` hook on standard material** | Discouraged for new work — touches Three.js shader internals via GLSL injection, doesn't run on WebGPU. Keep only for legacy code yet to be ported to TSL. | WebGL 2 only | Tier B + WebGL-only |
+| **Full `ShaderMaterial` / `RawShaderMaterial`** | Effects that need raw GLSL. The framework's default disallows this; require explicit project-level opt-in. | WebGL 2 only | Tier C + WebGL-only |
 
-`renderer-config.json` → `materials.allowCustomShaders` gates which
-approaches a build allows:
-- `'roles-only'` — material library only; any custom-shader call
-  throws at boot. Strictest; useful for demo/marketing builds.
-- `'node-only'` — roles + `NodeMaterial`. Recommended for new
-  games.
-- `'opt-in'` — all approaches, but `onBeforeCompile` and raw
-  shaders require an explicit registration (so the codebase can be
-  audited).
-- `'always'` (default during prototyping) — anything goes.
+`renderer-config.json` → `materials.allowCustomShaders` gates
+which approaches a build allows. The values are documented in
+[`renderer-configuration.md`](renderer-configuration.md) § Custom
+shader policy; the framework default is `"always-tsl"` (roles +
+TSL `NodeMaterial` only; raw shaders are hard errors).
+
+The `recipe-canon.md` retrieve-adapt-validate flow covers the
+specific case where an AI-generated TSL recipe fails — the human
+gate either adapts the recipe or falls back to a curated variant.
+TSL gaps (idioms that don't yet have TSL equivalents) are tracked
+in the recipe canon's `backendCoverage` metadata; the framework
+skips backend-incompatible recipes when running on the affected
+backend.
 
 Custom shaders accumulate maintenance debt; the `shader-critic`
 agent (see [`subagent-roster.md`](subagent-roster.md)) reviews
-custom-shader additions for: WebGPU portability, varying-vector
-budget against `webgl-constraints.md` limits, missing precision
-qualifiers, missing tier-degraded variants.
+custom-shader additions for: TSL portability, varying-vector
+budget against `webgl-constraints.md` limits, missing tier-degraded
+variants.
 
 ---
 
@@ -407,3 +425,9 @@ v0 so the surface has something to surface.
   custom-shader review
 - [`abstraction-discipline.md`](abstraction-discipline.md) — Tier
   A/B/C boundaries for shader code
+- [`renderer-feature-matrix.md`](renderer-feature-matrix.md) —
+  per-feature backend support; where TSL gaps live
+- [`adr/0005-dual-renderer-backend.md`](adr/0005-dual-renderer-backend.md)
+  — TSL-first material authoring decision
+- [`recipe-canon.md`](recipe-canon.md) — curated shader / VFX
+  recipes; backend coverage metadata

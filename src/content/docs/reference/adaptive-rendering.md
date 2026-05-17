@@ -39,12 +39,26 @@ slots.
 Tier 0/1/2/3 = LOW / MEDIUM / HIGH / ULTRA. Each tier is a *named
 visual budget* that the renderer hits automatically.
 
-| Tier | Reference hardware | Frame target | Resolution scale | Shadows | Post-FX | Particles | Render path |
-|---|---|---|---|---|---|---|---|
-| **LOW** | 4-yr-old mid-tier Android, low-end laptop | 30 FPS | 0.6-1.0x dynamic | None or single hard | None | 25% density | WebGL 2 |
-| **MEDIUM** | Mid-tier mobile, modern budget laptop, Steam Deck | 60 FPS (30 floor) | 0.85-1.0x dynamic | PCF soft, 1 cascade | Tone-map + FXAA | 60% density | WebGL 2 |
-| **HIGH** | Modern desktop w/ discrete GPU | 60 FPS | Native | PCF soft, 2 cascades | Tone-map + bloom + SSAO + colour grade | 100% density | WebGL 2 or WebGPU |
-| **ULTRA** | High-end gaming PC (RTX 4070+, M-series Max+) | 120 FPS unlocked | Native, optional supersample | High-quality cascaded, contact shadows | Full post + DOF + atmospheric | 100% density + extras | WebGPU preferred |
+| Tier | Reference hardware | Frame target | Resolution scale | Shadows | Post-FX | Particles |
+|---|---|---|---|---|---|---|
+| **LOW** | 4-yr-old mid-tier Android, low-end laptop | 30 FPS | 0.6-1.0x dynamic | None or single hard | None | 25% density |
+| **MEDIUM** | Mid-tier mobile, modern budget laptop, Steam Deck | 60 FPS (30 floor) | 0.85-1.0x dynamic | PCF soft, 1 cascade | Tone-map + FXAA | 60% density |
+| **HIGH** | Modern desktop w/ discrete GPU | 60 FPS | Native | PCF soft, 2 cascades | Tone-map + bloom + SSAO + colour grade | 100% density |
+| **ULTRA** | High-end gaming PC (RTX 4070+, M-series Max+) | 120 FPS unlocked | Native, optional supersample | High-quality cascaded, contact shadows | Full post + DOF + atmospheric | 100% density + extras |
+
+**Backend (WebGL 2 vs WebGPU) is orthogonal to tier.** Tier
+captures *how much visual work* the device can handle; backend
+captures *which graphics API is available*. A top-end Apple
+Silicon Mac on older Safari hits ULTRA visually on WebGL 2; an
+entry-level Chromebook with WebGPU support runs LOW on WebGPU.
+Both axes select independently. The framework's backend
+selection flow lives in
+[`adr/0005-dual-renderer-backend.md`](adr/0005-dual-renderer-backend.md)
+and the consumer-facing config is in
+[`renderer-configuration.md`](renderer-configuration.md). What
+each tier can *additionally* express on WebGPU (compute particles
+at higher density, GPU-driven culling, volumetric effects) lives
+in [`renderer-feature-matrix.md`](renderer-feature-matrix.md).
 
 These numbers are *defaults*; per-game overrides land in
 `packages/content/data/render-tiers.json`. The default table is the
@@ -115,7 +129,6 @@ internally has finer-grained slots that the tier maps onto:
 | **Crowd render path** | Per-character mesh / instanced impostors / billboards |
 | **Dynamic resolution range** | Min/max scale the resolution can swing through |
 | **Frame target** | Cap for the render loop (browser vsync handles enforcement) |
-| **Render path** | WebGL 2 / WebGPU |
 | **Anisotropic filtering** | 1x / 4x / 16x |
 | **Mipmap LOD bias** | -1 / 0 / +1 |
 
@@ -218,7 +231,6 @@ land here.
 | Texture transcode target | ETC1S/BC1 | UASTC/BC7 | UASTC/BC7 | UASTC/BC7 hi |
 | Anisotropic filtering | 1x | 4x | 16x | 16x |
 | Mesh LOD bias | +1 (favour low) | 0 | -0.5 (favour high) | -1 |
-| Render path | WebGL 2 | WebGL 2 | WebGL 2 / WebGPU | WebGPU preferred |
 | Frame target | 30 | 60 | 60 | 120 unlocked |
 
 These are reference defaults; calibrate after first probe runs on
@@ -319,8 +331,12 @@ be robust enough that the player never needs to intervene.
 8. **Developer settings panel** (`Ctrl+Shift+G` escape hatch) — v1
 9. **Cinematic dynamic-budget borrowing** — v2 (when there are
    cinematics)
-10. **WebGPU render path** — v2 (when WebGPU stabilises across
-    enough browsers; today it's good enough as the ULTRA-tier upside)
+10. **Pattern A / B prefab features that exploit WebGPU compute**
+    — v2 (compute particles, GPU-driven crowd path, volumetric
+    fog). Backend selection itself is settled per
+    [`adr/0005-dual-renderer-backend.md`](adr/0005-dual-renderer-backend.md);
+    this step is the per-tier capability uplift inside that
+    framework.
 
 ---
 
@@ -345,3 +361,7 @@ be robust enough that the player never needs to intervene.
   material capability matrix; the material library names which
   Three.js material class + texture maps each role uses on each
   tier, slotting into this doc's tier framework
+- [`renderer-feature-matrix.md`](renderer-feature-matrix.md) —
+  per-feature backend support (orthogonal axis to tier)
+- [`adr/0005-dual-renderer-backend.md`](adr/0005-dual-renderer-backend.md)
+  — the WebGPU + WebGL 2 dual-backend decision
