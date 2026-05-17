@@ -204,6 +204,37 @@ about pre-1.0 minor bumps, then asks for confirmation.
 The doctor refuses to write when the rewriter can't find the
 `vibesmith =` line — it never corrupts a manifest.
 
+### `vibesmith upgrade`
+
+The unified upgrade surface. Auto-detects project shape and
+dispatches to the right writer:
+
+- **`vibesmith.toml` projects** — delegates to the same planner /
+  rewriter `--upgrade-project` uses. Same caret-against-binary
+  semantics; same `--yes` / `--dry-run` ergonomics.
+- **SHA-pinned consumers** (legacy `vibesmith init`–scaffolded
+  shape with `.vibesmith/config.ts` `frameworkRef: '<sha>'`) —
+  compares the pinned SHA to the sibling framework checkout's
+  `HEAD` (or `--to <ref>`), prints the commit subjects that land
+  in the range, and offers to rewrite `frameworkRef` to the new
+  SHA.
+
+| Flag | Behaviour |
+|---|---|
+| `--cwd <path>` | Project root (defaults to current dir). |
+| `--framework <path>` | Vibesmith repo root (SHA-pinned shape; defaults to `../vibesmith`). |
+| `--to <ref>` | Target ref (sha / branch / tag) for SHA-pinned consumers. Defaults to `HEAD`. |
+| `--yes` | Skip the confirm prompt. |
+| `--dry-run` | Print the plan without writing. |
+| `--json` | Emit the plan as JSON (for CI / assistant consumption). |
+| `--binary-version <version>` | Override the binary version for `vibesmith.toml` projects. |
+
+The commit list is capped at 25 entries; longer ranges show a
+`… and N more` hint pointing the user at `git log` in the
+framework repo for the full picture. Migrators proper aren't
+shipped yet — the first one lands when a real breaking change
+rolls out, and will hook in at the post-plan / pre-write step.
+
 ---
 
 ## Optional starter-diff at upgrade

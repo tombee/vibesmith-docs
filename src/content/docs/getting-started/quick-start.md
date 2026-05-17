@@ -61,7 +61,7 @@ Framework + tooling (deletable on eject):
 | `vibesmith doctor --upgrade-project` | Bump `[project].vibesmith` in `vibesmith.toml` to satisfy the running binary. Interactive; `--yes` skips the confirm, `--dry-run` shows the planned change without writing. |
 | `vibesmith doctor --json` | Machine-readable doctor output for CI / agents. |
 | `vibesmith add-extension <id>` | Install a standard extension. |
-| `vibesmith upgrade` | Compare framework pin vs. HEAD. |
+| `vibesmith upgrade` | Pin-drift report + interactive bump. Auto-detects project shape: `vibesmith.toml` projects (caret semver pin), SHA-pinned consumers via `.vibesmith/config.ts` `frameworkRef`. Lists the commit subjects landing in the range before prompting. Flags: `--to <ref>` (target a non-HEAD ref), `--yes`, `--dry-run`, `--json`. |
 
 `vibesmith doctor` detects two project shapes:
 
