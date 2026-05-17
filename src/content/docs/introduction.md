@@ -120,5 +120,8 @@ Open a project folder in the Vibesmith desktop app and you get:
   recipes once your project is running.
 - [Comparisons FAQ](/vibesmith-docs/faq/) — vs Three.js,
   Babylon.js, web-export engines, web-native competitors.
+- [Positioning](/vibesmith-docs/positioning/) — the deeper *why*:
+  the strategic bet, the limits, and what we deliberately won't
+  do.
 - [Anti-patterns](/vibesmith-docs/anti-patterns/) — the 12-entry
   list of R3F mistakes that bite first.

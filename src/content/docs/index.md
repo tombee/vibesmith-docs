@@ -20,6 +20,8 @@ the framework.
 - [**Comparisons FAQ**](/vibesmith-docs/faq/) — vs Three.js, R3F,
   Babylon.js, native engines compiled to the web, web-native
   competitors. The honest picker.
+- [**Positioning**](/vibesmith-docs/positioning/) — the deeper *why*:
+  the strategic bet, the limits, and what we deliberately won't do.
 - [**Quick start**](/vibesmith-docs/getting-started/quick-start/) —
   `vibesmith init` a new project and what it sets up.
 - [**Cookbook**](/vibesmith-docs/cookbook/) — short, code-forward
