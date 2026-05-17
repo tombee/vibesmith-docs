@@ -62,6 +62,7 @@ Framework + tooling (deletable on eject):
 | `vibesmith doctor --json` | Machine-readable doctor output for CI / agents. |
 | `vibesmith add-extension <id>` | Install a standard extension. |
 | `vibesmith upgrade` | Pin-drift report + interactive bump. Auto-detects project shape: `vibesmith.toml` projects (caret semver pin), SHA-pinned consumers via `.vibesmith/config.ts` `frameworkRef`. Lists the commit subjects landing in the range before prompting. Flags: `--to <ref>` (target a non-HEAD ref), `--yes`, `--dry-run`, `--json`. |
+| `vibesmith asset-pipeline optimize <path>` | Run the glTF optimize pipeline (drop unused channels, quantise, optionally Draco) on a single `.glb` or directory tree. Accepts `--tier LOW\|MEDIUM\|HIGH\|ULTRA` to apply the per-tier matrix (LOW/MEDIUM/HIGH add Draco; ULTRA preserves precision). `--out <path>` chooses the output; `--no-cache` reprocesses fresh outputs. |
 
 `vibesmith doctor` detects two project shapes:
 

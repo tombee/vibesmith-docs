@@ -353,7 +353,11 @@ be robust enough that the player never needs to intervene.
 - [`qa-strategy.md`](qa-strategy.md) — Tier 0 probe coverage for
   tier viability
 - [`asset-pipeline.md`](asset-pipeline.md) — KTX2 transcode targets +
-  LOD generation feed into the per-tier visual budget
+  LOD generation feed into the per-tier visual budget. The
+  **build-time** per-tier optimize matrix (position/normal/texcoord
+  quantize bits + Draco on/off) lives in `asset-pipeline.md` §
+  "Per-tier optimize matrix"; it is co-defined with this doc's tier
+  names — bumping one without the other invites drift
 - [`renderer-configuration.md`](renderer-configuration.md) — sibling
   config surface for the non-tier renderer knobs (context options,
   DPR, detection extension points, runtime adjustment policy)
