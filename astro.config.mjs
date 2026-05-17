@@ -46,6 +46,7 @@ export default defineConfig({
 						{ label: 'Home', slug: 'index' },
 						{ label: 'What Vibesmith is', slug: 'introduction' },
 						{ label: 'Comparisons FAQ', slug: 'faq' },
+						{ label: 'Positioning', slug: 'positioning' },
 						{ label: 'Quick start', slug: 'getting-started/quick-start' },
 					],
 				},
