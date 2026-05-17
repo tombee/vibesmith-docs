@@ -18,6 +18,7 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 - [Cookbook index](https://tombee.github.io/vibesmith-docs/cookbook/): conventions, recipe roadmap
 - [Instancing](https://tombee.github.io/vibesmith-docs/cookbook/instancing/): rendering 50+ identical objects in one draw call
 - [Animations](https://tombee.github.io/vibesmith-docs/cookbook/animations/): GLTF skeletal animations + procedural lerp / spring transforms
+- [Positional footsteps](https://tombee.github.io/vibesmith-docs/cookbook/positional-footsteps/): wire 3D footsteps from animation events through the audio runtime, with seeded pitch jitter for scenario-deterministic replay
 - [Performance debugging](https://tombee.github.io/vibesmith-docs/cookbook/perf-debugging/): `gl.info`, attribution checklist, perf tools
 - [Writing a game script](https://tombee.github.io/vibesmith-docs/cookbook/writing-game-scripts/): `defineGameScript` lifecycle (mount → tick → unmount), `GameScriptContext` surface, what you can / shouldn't do inside a script
 
@@ -28,6 +29,7 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 ## Reference
 
 - [Engine patterns](https://tombee.github.io/vibesmith-docs/reference/engine-patterns/): Unity-isms ↔ Three.js + R3F translation
+- [Audio runtime](https://tombee.github.io/vibesmith-docs/reference/audio-runtime/): WebAudio wrapper, `<AudioEmitter>` on `Object3D`, fixed five-bus mixer, recipe-canon adapter, scenario capture + replay, deferred-init autoplay gate
 - [Scene construction](https://tombee.github.io/vibesmith-docs/reference/scene-construction/): Recipe → Generator → Composition pipeline
 - [Prefab system](https://tombee.github.io/vibesmith-docs/reference/prefab-system/): content units (recipe + generator + director + AI brief + preview)
 - [Material system](https://tombee.github.io/vibesmith-docs/reference/material-system/): material roles, tier capability, shader policy

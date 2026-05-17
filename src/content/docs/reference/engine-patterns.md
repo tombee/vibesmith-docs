@@ -269,10 +269,15 @@ SSAO, color grading, vignette. Declarative `<EffectComposer>`.
 **Three:** `PositionalAudio` + `AudioListener`. drei has
 `<PositionalAudio />`. Web Audio API underneath.
 
-**What we own:** thin `AudioManager` for mixer buses, ducking, volume
-persistence. ~80 lines.
+**What we own:** `@vibesmith/audio-runtime` — scene-graph-aware
+wrapper above WebAudio. `<AudioEmitter>` scene-node components,
+camera-driven `AudioListener` sync, fixed five-bus mixer (master /
+music / sfx / dialogue / ambient) with ducking, manifest-driven
+buffer cache, recipe adapter, scenario capture + replay,
+deferred-init autoplay gate. WebAudio nodes stay reachable via
+`emitter.raw()`. See [Audio runtime](/reference/audio-runtime/).
 
-**Status:** built-in + small wrapper.
+**Status:** built-in wrapper.
 
 ---
 
@@ -630,7 +635,7 @@ These exist in Unity, don't exist in our stack, and don't need replacement:
 - InputActions (~150)
 - ObjectPool (~50)
 - ZoneManager (~300)
-- AudioManager (~80)
+- audio-runtime: emitter + mixer + listener-sync + autoplay gate (~400; see [Audio runtime](/reference/audio-runtime/))
 - Content loader + Zod schemas (~200)
 - Client prediction + reconciliation (~200)
 - Misc glue (~300)
