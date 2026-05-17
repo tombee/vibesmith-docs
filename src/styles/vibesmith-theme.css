@@ -1,0 +1,194 @@
+/*
+ * Vibesmith brand theme — overlays the Vibesmith design tokens
+ * on Starlight's default theme variables.
+ *
+ * Source of truth: `apps/vibesmith-app/index.html` in the
+ * framework repo (`<style>` block at the top of `<head>`). When
+ * the app's tokens change, mirror them here. The AGENTS.md
+ * rule `keep-vibesmith-docs-in-sync` covers it.
+ *
+ * Token list (mirror of app):
+ *
+ *   Surfaces:     --bg / --bg-elevated / --surface / --surface-2 / --surface-hover
+ *   Text:         --text / --text-2 / --text-3 / --text-muted / --text-disabled
+ *   Accent:       --accent (forge red) / --accent-soft / --accent-deep
+ *   AI accent:    --accent-ai (soft violet)
+ *   Signal:       --danger / --success / --warning
+ *   Radius:       --radius-xs / --radius-sm / --radius / --radius-lg / --radius-pill
+ *   Type sizes:   --text-xs / --text-sm / --text-base / --text-lg / --text-xl / --text-display
+ *   Tracking:     --tracking-tight / --tracking-tighter / --tracking-normal / --tracking-wide
+ *   Fonts:        --font-sans (Space Grotesk) / --font-ui (system) / --font-mono (JetBrains Mono)
+ *   Focus:        --focus-ring
+ *
+ * Starlight variables overridden (selection): see Starlight's
+ * theming docs — https://starlight.astro.build/guides/css-and-tailwind/
+ */
+
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource-variable/jetbrains-mono';
+
+:root {
+  /* ── Surfaces (warm-tinted dark) ── */
+  --bg: #0d0c0f;
+  --bg-elevated: #131217;
+  --surface: #18171d;
+  --surface-2: #1f1e25;
+  --surface-hover: #25232c;
+  --surface-active: #2d2b35;
+  --surface-highlight: rgba(255, 255, 255, 0.04);
+
+  --border: #2a2832;
+  --border-hover: #3a3744;
+  --border-strong: #4a4655;
+
+  /* ── Text ── */
+  --text: #f4f4f6;
+  --text-2: #c2c0cc;
+  --text-3: #8a8896;
+  --text-muted: #5a5868;
+  --text-disabled: #3e3c48;
+
+  /* ── Primary accent (warm forge red) ── */
+  --accent: #e7503a;
+  --accent-soft: #f47155;
+  --accent-deep: #c8381f;
+  --accent-bg: rgba(231, 80, 58, 0.1);
+  --accent-border: rgba(231, 80, 58, 0.4);
+
+  /* ── Secondary accent (AI surfaces) ── */
+  --accent-ai: #a78bfa;
+  --accent-ai-soft: #c4b5fd;
+  --accent-ai-bg: rgba(167, 139, 250, 0.1);
+
+  /* ── Signal colours ── */
+  --danger: #f87171;
+  --success: #34d399;
+  --warning: #fbbf24;
+
+  /* ── Radius ── */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  /* ── Type families ── */
+  --font-sans: 'Space Grotesk Variable', -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-ui: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo,
+    Monaco, Consolas, monospace;
+}
+
+/*
+ * Map Vibesmith tokens onto Starlight's variables.
+ * Starlight uses --sl-* prefix for all theme variables.
+ */
+
+:root,
+:root[data-theme='dark'] {
+  /* Accent palette — Starlight derives hover / link colours from these. */
+  --sl-color-accent-low: rgba(231, 80, 58, 0.18);
+  --sl-color-accent: var(--accent);
+  --sl-color-accent-high: var(--accent-soft);
+
+  /* Text palette. */
+  --sl-color-white: var(--text);
+  --sl-color-gray-1: var(--text);
+  --sl-color-gray-2: var(--text-2);
+  --sl-color-gray-3: var(--text-3);
+  --sl-color-gray-4: var(--text-muted);
+  --sl-color-gray-5: var(--text-disabled);
+  --sl-color-gray-6: var(--border);
+  --sl-color-black: var(--bg);
+
+  /* Backgrounds. */
+  --sl-color-bg: var(--bg);
+  --sl-color-bg-nav: var(--bg-elevated);
+  --sl-color-bg-sidebar: var(--bg-elevated);
+  --sl-color-bg-inline-code: var(--surface);
+  --sl-color-bg-accent: var(--accent-bg);
+
+  --sl-color-text: var(--text);
+  --sl-color-text-accent: var(--accent);
+  --sl-color-text-invert: var(--bg);
+
+  /* Hairlines + borders. */
+  --sl-color-hairline-light: var(--border);
+  --sl-color-hairline: var(--border);
+  --sl-color-hairline-shade: var(--border-hover);
+
+  /* Fonts. */
+  --sl-font: var(--font-ui);
+  --sl-font-system: var(--font-ui);
+  --sl-font-mono: var(--font-mono);
+
+  /* Heading sizing — keep Starlight's scale, just match weight. */
+}
+
+/* Headings use the brand sans (Space Grotesk) for display register;
+ * body keeps system-ui for tight reading metrics inside dense docs.
+ * Mirrors the app's split (--font-sans on chrome, --font-ui inside
+ * panels). */
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.sl-markdown-content h3,
+.sl-markdown-content h4,
+.sl-markdown-content h5,
+.sl-markdown-content h6,
+header h1,
+.site-title {
+  font-family: var(--font-sans);
+  letter-spacing: var(--tracking-tight, -0.02em);
+}
+
+/* Code blocks pick up the brand mono. */
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-mono);
+}
+
+/* Inline code chips — subtle warm tint instead of Starlight's
+ * neutral grey block. */
+.sl-markdown-content :not(pre) > code {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 0.05em 0.4em;
+  font-size: 0.9em;
+}
+
+/* Tables — warmer hairlines + zebra rows that fit the surface
+ * scale. */
+.sl-markdown-content table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.sl-markdown-content th,
+.sl-markdown-content td {
+  border-bottom: 1px solid var(--border);
+}
+.sl-markdown-content th {
+  background: var(--surface);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.78em;
+}
+.sl-markdown-content tr:last-child td {
+  border-bottom: none;
+}
+
+/* Focus ring — match the app's accent ring rather than the default
+ * blue. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
