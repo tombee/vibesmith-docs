@@ -9,7 +9,8 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 
 ## Getting started
 
-- [Introduction](https://tombee.github.io/vibesmith-docs/introduction/): what Vibesmith is + who the docs are for
+- [Introduction](https://tombee.github.io/vibesmith-docs/introduction/): friendly intro — what Vibesmith gives you, who it's for, what it deliberately isn't
+- [Comparisons FAQ](https://tombee.github.io/vibesmith-docs/faq/): vs Three.js, React Three Fiber, Babylon.js, web-export engines, web-native competitors — and when to pick one of those instead
 - [Quick start](https://tombee.github.io/vibesmith-docs/getting-started/quick-start/): `vibesmith init` + project layout
 
 ## Cookbook

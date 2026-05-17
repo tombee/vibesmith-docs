@@ -3,9 +3,11 @@ title: Vibesmith
 description: AI-augmented framework for building WebGL games with React Three Fiber. Guides, cookbook, anti-patterns, and reference.
 ---
 
-Vibesmith is a framework for building AI-augmented games on the web. It
-ships methodology, agentic pipeline patterns, an in-browser dev shell,
-and conventions for Vite + React + R3F + Three.js + TypeScript projects.
+Vibesmith is an editor + framework for building games that run on
+the web — built on Three.js, React Three Fiber, and Vite, ships
+as a desktop app that opens project folders, and designed from the
+ground up to be driven by AI coding assistants working alongside a
+human.
 
 This site is the **public reference** — guides, cookbook, anti-patterns,
 and a small surface of framework reference docs aimed at consumers of
@@ -13,14 +15,21 @@ the framework.
 
 ## Read this first
 
+- [**What Vibesmith is**](/vibesmith-docs/introduction/) — friendly
+  intro: what you get, who it's for, what it deliberately isn't.
+- [**Comparisons FAQ**](/vibesmith-docs/faq/) — vs Three.js, R3F,
+  Babylon.js, native engines compiled to the web, web-native
+  competitors. The honest picker.
 - [**Quick start**](/vibesmith-docs/getting-started/quick-start/) —
   `vibesmith init` a new project and what it sets up.
 - [**Cookbook**](/vibesmith-docs/cookbook/) — short, code-forward
-  recipes (instancing, animations, perf debugging, …).
+  recipes (instancing, animations, perf debugging, writing game
+  scripts).
 - [**Anti-patterns**](/vibesmith-docs/anti-patterns/) — numbered list
   of recurring R3F mistakes. Worth skimming before writing per-frame code.
 - [**Reference**](/vibesmith-docs/reference/) — engine patterns, WebGL
-  constraints, performance budgets, adaptive rendering, materials.
+  constraints, performance budgets, adaptive rendering, materials,
+  project upgrade model.
 
 ## Who this is for
 
@@ -42,5 +51,5 @@ internal architecture artifacts and intentionally not published.
 ## Status
 
 Pre-MVP. Content lands as the framework matures; cookbook + reference
-entries are added when real consumer projects (Vibescape, Riftbound)
-hit specific gaps, not speculatively.
+entries are added when real consumer projects hit specific gaps, not
+speculatively.
