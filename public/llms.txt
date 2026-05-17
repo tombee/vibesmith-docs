@@ -36,6 +36,7 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 - [Adaptive rendering](https://tombee.github.io/vibesmith-docs/reference/adaptive-rendering/): LOW / MEDIUM / HIGH / ULTRA tier auto-scaling
 - [Renderer configuration](https://tombee.github.io/vibesmith-docs/reference/renderer-configuration/): backend preference, context options, DPR, detection hooks, custom-shader policy
 - [Renderer feature matrix](https://tombee.github.io/vibesmith-docs/reference/renderer-feature-matrix/): per-feature WebGL 2 / WebGPU support + graceful-degrade / feature-gate / backend-required patterns
+- [Physics](https://tombee.github.io/vibesmith-docs/reference/physics/): `definePhysics({ id, world, step, raycast, query })` adapter contract; `<RigidBody>` + `<PhysicsScene>` R3F components; entity-id-keyed `ctx.physics` queries + mutations; scenario capture + replay; Rapier as the default adapter
 - [Asset packs](https://tombee.github.io/vibesmith-docs/reference/asset-packs/): third-party vendor packs as canon-substrate seeds — pack manifest, vendor-adapter pattern, texture dedup, style-profile extraction, R3F consumer API, in-pack-style AI generation
 - [QA strategy](https://tombee.github.io/vibesmith-docs/reference/qa-strategy/): four-tier QA + text telemetry
 - [Scenario-driven dev](https://tombee.github.io/vibesmith-docs/reference/scenario-driven-dev/): deterministic-state UX iteration substrate
