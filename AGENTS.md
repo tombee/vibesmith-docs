@@ -127,6 +127,27 @@ pnpm build    # verifies the production build
 4. Update `public/llms.txt` if you want it surfaced separately
    (the section itself is already listed).
 
+### Brand tokens — sync with the framework app
+
+The visual register (colours, type, radius, spacing) is shared
+between this docs site and the framework's desktop app. The
+**source of truth** is `apps/vibesmith-app/index.html` in the
+framework repo — the `<style>` block at the top of `<head>`
+where the design tokens live.
+
+This site mirrors the tokens in
+[`src/styles/vibesmith-theme.css`](src/styles/vibesmith-theme.css)
+(loaded via Starlight's `customCss` config). When the app's
+tokens change, mirror them here in the same PR or the next
+matching one. Keep the comment block at the top of the theme
+file current with the token list.
+
+The agent page (`agents/index.md`) is intentionally **omitted
+from the human sidebar** but stays reachable via direct URL +
+`public/llms.txt` (the agent manifest). The reasoning: agent-
+focused content is reading material for AI, not navigation
+material for human readers browsing the docs.
+
 ### Deploying
 
 Pushed to `main` → `.github/workflows/deploy.yml` runs → static
