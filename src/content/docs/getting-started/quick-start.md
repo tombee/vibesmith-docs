@@ -57,9 +57,24 @@ Framework + tooling (deletable on eject):
 | `pnpm dev` | Vite dev server + HMR. |
 | `pnpm build` | Production bundle. |
 | `pnpm typecheck` | Strict TypeScript. |
-| `vibesmith doctor` | Project health check. |
+| `vibesmith doctor` | Read-only project health check (manifest, compat range, deps drift, conventional folders, template baseline, …). |
+| `vibesmith doctor --upgrade-project` | Bump `[project].vibesmith` in `vibesmith.toml` to satisfy the running binary. Interactive; `--yes` skips the confirm, `--dry-run` shows the planned change without writing. |
+| `vibesmith doctor --json` | Machine-readable doctor output for CI / agents. |
 | `vibesmith add-extension <id>` | Install a standard extension. |
 | `vibesmith upgrade` | Compare framework pin vs. HEAD. |
+
+`vibesmith doctor` detects two project shapes:
+
+- Projects scaffolded by `vibesmith init` (this guide) — checks the
+  CLI surface (`STATUS.md` framework pin, sibling-vibesmith
+  checkout, biome / vitest shared configs, script wrapping).
+- Projects scaffolded by the Vibesmith desktop binary (folders
+  with `vibesmith.toml`) — checks the binary-side contract
+  (manifest validity, `[project].type`, binary compat range,
+  `[deps]` drift vs `.vibesmith/deps-lock.json`, runtime overlap,
+  conventional folder presence, template baseline). See the
+  [project upgrade model](/vibesmith-docs/reference/project-upgrade-model/)
+  reference for the full surface.
 
 ## Next steps
 

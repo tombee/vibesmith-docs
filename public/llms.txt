@@ -18,6 +18,7 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 - [Instancing](https://tombee.github.io/vibesmith-docs/cookbook/instancing/): rendering 50+ identical objects in one draw call
 - [Animations](https://tombee.github.io/vibesmith-docs/cookbook/animations/): GLTF skeletal animations + procedural lerp / spring transforms
 - [Performance debugging](https://tombee.github.io/vibesmith-docs/cookbook/perf-debugging/): `gl.info`, attribution checklist, perf tools
+- [Writing a game script](https://tombee.github.io/vibesmith-docs/cookbook/writing-game-scripts/): `defineGameScript` lifecycle (mount → tick → unmount), `GameScriptContext` surface, what you can / shouldn't do inside a script
 
 ## Anti-patterns
 
@@ -37,6 +38,7 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 - [Scenario-driven dev](https://tombee.github.io/vibesmith-docs/reference/scenario-driven-dev/): deterministic-state UX iteration substrate
 - [Director pattern](https://tombee.github.io/vibesmith-docs/reference/director-pattern/): AI-assisted content director
 - [AI assistant](https://tombee.github.io/vibesmith-docs/reference/ai-assistant/): context-aware in-browser assistant
+- [Project upgrade model](https://tombee.github.io/vibesmith-docs/reference/project-upgrade-model/): customer-owned vs framework-managed split, `[deps]` install flow, `vibesmith doctor` checks (incl. `--upgrade-project`), opt-in starter-diff, semver upgrade ceremony
 
 ## For agents
 
