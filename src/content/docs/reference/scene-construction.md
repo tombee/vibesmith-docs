@@ -14,6 +14,43 @@ constitution directors. Patterns established here generalize.
 
 ---
 
+## Runtime status
+
+The Recipe → Generator → Composition → Renderer pipeline is wired:
+
+- **`defineGenerator({ id, version, generate })`** in
+  `@vibesmith/runtime` registers a pure
+  `(recipe, ctx) → Composition` fn. Duplicate ids rejected; the
+  registry holds whatever a project boots with.
+- **`<RecipeScene recipe={…} generatorId="…" seed={…} />`** in
+  `@vibesmith/scene-construction` resolves the generator, builds
+  the seeded `GeneratorContext`, runs it, Zod-validates the
+  returned composition, and renders it via
+  **`<CompositionRenderer>`**. A `fallback` slot surfaces
+  `no-generator` / `generate-error` / `invalid-composition`
+  states without crashing the tree.
+- **`<CompositionRenderer composition={…} entityRenderers={…} />`**
+  is the data → React translator. Built-in renderers ship for
+  `mesh` (glTF + clone + transform), `group`, `light`
+  (`props.kind` fans to ambient/directional/point/spot), and
+  `instanced-mesh`. Consumer-specific types (`npc`, `audio`,
+  `trigger`, `spawn`, `patch`) plug in via the `entityRenderers`
+  map; everything else warns once. Parent / child reparenting
+  via `entity.parent` is honoured.
+- **`runGenerator(id, recipe, seed)`** is the headless dispatch
+  helper — same path `<RecipeScene>` walks, exposed for
+  server-side / probe Tier 0 use.
+
+What stays consumer-side, per `scene-assembly.md`
+§ "Responsibility split": the concrete generators themselves,
+the recipe registry + file loader, the `AssetResolver` that maps
+manifest keys to URLs, and the orchestrator that wires
+sub-generators together. The dev-tooling surfaces below (scene
+browser, variant grid, composition viewer, director mode) sit on
+top of this runtime; they're separate slices.
+
+---
+
 ## Four-layer split
 
 ```
