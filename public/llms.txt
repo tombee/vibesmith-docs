@@ -12,6 +12,7 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 - [Introduction](https://tombee.github.io/vibesmith-docs/introduction/): friendly intro — what Vibesmith gives you, who it's for, what it deliberately isn't
 - [Comparisons FAQ](https://tombee.github.io/vibesmith-docs/faq/): vs Three.js, React Three Fiber, Babylon.js, web-export engines, web-native competitors — and when to pick one of those instead
 - [Positioning](https://tombee.github.io/vibesmith-docs/positioning/): the strategic bet — narrow runtime (TS+R3F web target) + durable intelligence layer (canon, providers, MCP, recipes — engine-portable in principle); portability through architecture, not abstraction; Bevy as the canonical future-engine proving-ground; what success and falsification look like
+- [Principled non-features](https://tombee.github.io/vibesmith-docs/principled-non-features/): authoring affordances Vibesmith deliberately refuses — no JSX rewrite, no visual scripting, no drag-reference-onto-field, no shadow scene file, no name-registry indirection — with what the framework provides instead. The AI-fluency bet in operation.
 - [Quick start](https://tombee.github.io/vibesmith-docs/getting-started/quick-start/): `vibesmith init` + project layout
 
 ## Cookbook
@@ -22,6 +23,7 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 - [Positional footsteps](https://tombee.github.io/vibesmith-docs/cookbook/positional-footsteps/): wire 3D footsteps from animation events through the audio runtime, with seeded pitch jitter for scenario-deterministic replay
 - [Performance debugging](https://tombee.github.io/vibesmith-docs/cookbook/perf-debugging/): `gl.info`, attribution checklist, perf tools
 - [Writing a game script](https://tombee.github.io/vibesmith-docs/cookbook/writing-game-scripts/): `defineGameScript` lifecycle (mount → tick → unmount), `GameScriptContext` surface, what you can / shouldn't do inside a script
+- [Inspectable parameters (data-shape coaching)](https://tombee.github.io/vibesmith-docs/cookbook/inspectable-parameters/): declare `defineGameScript` parameters as a Zod object; one schema feeds the runtime, the inspector panel, and your AI assistant — without decorating your code
 - [Install Vibesmith MCP into your coding assistant](https://tombee.github.io/vibesmith-docs/cookbook/install-mcp/): `vibesmith mcp install claude-code | codex | copilot` — idempotent install + diagnose + uninstall per host; auth + scope guidance; capability-tier matrix
 
 ## Anti-patterns
