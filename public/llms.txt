@@ -22,6 +22,7 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 - [Positional footsteps](https://tombee.github.io/vibesmith-docs/cookbook/positional-footsteps/): wire 3D footsteps from animation events through the audio runtime, with seeded pitch jitter for scenario-deterministic replay
 - [Performance debugging](https://tombee.github.io/vibesmith-docs/cookbook/perf-debugging/): `gl.info`, attribution checklist, perf tools
 - [Writing a game script](https://tombee.github.io/vibesmith-docs/cookbook/writing-game-scripts/): `defineGameScript` lifecycle (mount → tick → unmount), `GameScriptContext` surface, what you can / shouldn't do inside a script
+- [Install Vibesmith MCP into your coding assistant](https://tombee.github.io/vibesmith-docs/cookbook/install-mcp/): `vibesmith mcp install claude-code | codex | copilot` — idempotent install + diagnose + uninstall per host; auth + scope guidance; capability-tier matrix
 
 ## Anti-patterns
 
