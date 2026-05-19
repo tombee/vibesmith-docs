@@ -1,6 +1,6 @@
 ---
 title: 'QA + playtest strategy'
-description: 'Vibesmith framework reference: QA + playtest strategy.'
+description: 'vibesmith framework reference: QA + playtest strategy.'
 ---
 
 ## The bet

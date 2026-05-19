@@ -1,9 +1,9 @@
 ---
 title: Agent context
-description: How AI coding agents should consume Vibesmith knowledge. Terse, link-rich; designed for context-window efficiency.
+description: How AI coding agents should consume vibesmith knowledge. Terse, link-rich; designed for context-window efficiency.
 ---
 
-This site is structured so AI coding agents working in Vibesmith
+This site is structured so AI coding agents working in vibesmith
 projects can grab context quickly without filesystem walks into the
 private framework repo.
 

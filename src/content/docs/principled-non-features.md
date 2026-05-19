@@ -1,15 +1,15 @@
 ---
 title: 'Principled non-features'
-description: 'A short list of authoring affordances Vibesmith deliberately does not ship — visual JSX-rewrite, shadow scene files, drag-reference-onto-field, name-registry indirection, custom DSLs. Each one is named here so you know what to expect, why it is not there, and what the framework gives you instead.'
+description: 'A short list of authoring affordances vibesmith deliberately does not ship — visual JSX-rewrite, shadow scene files, drag-reference-onto-field, name-registry indirection, custom DSLs. Each one is named here so you know what to expect, why it is not there, and what the framework gives you instead.'
 ---
 
-Vibesmith deliberately refuses some authoring affordances that
+vibesmith deliberately refuses some authoring affordances that
 are familiar from heavyweight native engines (Unity, Godot,
 Unreal) and from R3F-flavoured visual editors (Triplex,
 Threlte Studio). They look like obvious wins; they are not, and
 this page names them so you know what to expect.
 
-The reasoning is one rule: **Vibesmith bets that AI coding
+The reasoning is one rule: **vibesmith bets that AI coding
 assistants are most useful on *idiomatic* code, so every
 authoring feature has to leave your code at least as legible to
 an AI assistant as it was before**. Affordances that would
@@ -28,7 +28,7 @@ ecosystem). This page is the consumer-facing summary.
 on disk silently updates with the new prop values. (Triplex's
 and Threlte Studio's headline feature.)
 
-**What Vibesmith does instead.** Edits that should persist go
+**What vibesmith does instead.** Edits that should persist go
 through *recipe edits* — JSON files in `.vibesmith/recipes/`
 that the dynamic scene loader picks up at runtime. The inspector
 shows you the recipe diff before it lands, you commit it like
@@ -46,13 +46,13 @@ they're worth replaying.
 gameplay logic without writing code. (Unreal Blueprints, Unity
 Bolt.)
 
-**What Vibesmith does instead.** Game logic is idiomatic
+**What vibesmith does instead.** Game logic is idiomatic
 TypeScript via
 [`defineGameScript`](cookbook/writing-game-scripts.md). If you'd
 otherwise reach for visual scripting because writing the
 TypeScript feels hard, ask your AI coding assistant for the
 edit — that's the affordance that replaces "designer-friendly
-wiring" in Vibesmith's bet. The assistant is faster than
+wiring" in vibesmith's bet. The assistant is faster than
 node-wiring and the output is code your next session can read.
 
 ## No drag-reference-onto-field
@@ -61,11 +61,11 @@ node-wiring and the output is code your next session can read.
 onto a `Transform target` field in another component to assign
 a serialised reference. (Unity's headline ergonomic.)
 
-**What Vibesmith does instead.** References are hand-typed
+**What vibesmith does instead.** References are hand-typed
 **string names in source code** — e.g.
 `ctx.find('Player.Camera')`. To make this comfortable:
 
-- The Vibesmith MCP surface gives your AI assistant cmd+P-style
+- The vibesmith MCP surface gives your AI assistant cmd+P-style
   autocomplete over scene-object names.
 - The hierarchy and scene-inspector panels double-click a node
   to insert its name at the cursor.
@@ -81,7 +81,7 @@ it the same way the runtime does.
 sits alongside your JSX and is the *authoritative* description
 the framework reads at runtime, with your JSX as a derived view.
 
-**What Vibesmith does instead.** JSX + recipe JSON are the only
+**What vibesmith does instead.** JSX + recipe JSON are the only
 sources of truth. JSX describes hand-authored scene content;
 recipe JSON describes procedural / parametric content the
 dynamic loader resolves. There is no third file, and nothing in
@@ -94,7 +94,7 @@ the framework rewrites either one based on a visual edit.
 prefab definition in some other file you have to crawl to know
 what `<Prefab id="crate"/>` actually contains.
 
-**What Vibesmith does instead.** Prefabs are *typed-data
+**What vibesmith does instead.** Prefabs are *typed-data
 factories*. You import the prefab factory, call it with
 parameters, render the returned JSX inline:
 
@@ -119,7 +119,7 @@ walks through the same pattern for game scripts.
 
 ## How this list grows
 
-Vibesmith periodically surveys what authoring features
+vibesmith periodically surveys what authoring features
 Unity / Godot / Bevy / R3F editors are shipping and classifies
 each against the AI-fluency test. Closures that pay for
 themselves become roadmap items; closures that would tax AI
@@ -132,7 +132,7 @@ require fresh evidence that the original prediction was wrong.
 - [Positioning](positioning.md) — the strategic bet these
   refusals defend.
 - [Engine patterns](reference/engine-patterns.md) —
-  Unity-isms ↔ Vibesmith translation; the *what we do
+  Unity-isms ↔ vibesmith translation; the *what we do
   instead* row for each affordance above.
 - [Inspectable parameters cookbook](cookbook/inspectable-parameters.md)
   — the data-shape coaching pattern in practice.

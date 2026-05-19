@@ -1,9 +1,9 @@
 ---
-title: 'What Vibesmith is'
-description: 'A friendly introduction — what Vibesmith gives you, who it is for, and what it deliberately is not.'
+title: 'What vibesmith is'
+description: 'A friendly introduction — what vibesmith gives you, who it is for, and what it deliberately is not.'
 ---
 
-Vibesmith is an **editor + framework** for building games that run on
+vibesmith is an **editor + framework** for building games that run on
 the web. It's built on Three.js, React Three Fiber, and Vite, ships
 as a desktop app that opens project folders, and is designed from
 the ground up to be driven by AI coding assistants working alongside
@@ -20,7 +20,7 @@ are portable, human-readable, and AI-friendly.**
 
 ## What you get
 
-Open a project folder in the Vibesmith desktop app and you get:
+Open a project folder in the vibesmith desktop app and you get:
 
 - **A real editor.** Three-panel layout (hierarchy, viewport,
   inspector) following the conventions established by mature
@@ -65,11 +65,11 @@ Open a project folder in the Vibesmith desktop app and you get:
   surface are all shaped for it.
 - **Developers who pick web-first.** If your target is a browser
   (and maybe a Tauri-wrapped desktop / mobile shell on top),
-  Vibesmith starts where you start.
+  vibesmith starts where you start.
 
 ## What it isn't
 
-- **Not a new rendering engine.** Vibesmith uses Three.js (via
+- **Not a new rendering engine.** vibesmith uses Three.js (via
   React Three Fiber) for rendering. We build the editor +
   methodology + content pipeline on top, not under.
 - **Not a no-code platform.** Game logic is TypeScript inside
@@ -89,25 +89,25 @@ Open a project folder in the Vibesmith desktop app and you get:
 
 ## How it fits next to what you already use
 
-- **Three.js** — Vibesmith uses it. Three is the rendering layer
+- **Three.js** — vibesmith uses it. Three is the rendering layer
   underneath everything you'll see on screen.
-- **React + R3F** — Vibesmith uses them for the UI and the scene
+- **React + R3F** — vibesmith uses them for the UI and the scene
   tree. Your scenes are React components mounted inside the
   binary's `<Canvas>`.
-- **Vite** — Vibesmith uses it. Hot reload of your scripts +
+- **Vite** — vibesmith uses it. Hot reload of your scripts +
   scenes works the way you'd expect.
 - **Established native engines (or web-first competitors).**
-  Vibesmith is an alternative path, not a complement. See the
+  vibesmith is an alternative path, not a complement. See the
   [comparisons FAQ](/vibesmith-docs/faq/) for the substantive
   differences.
 
 ## When to come back later instead
 
 - **You're shipping next month** and need every feature today.
-  Vibesmith is pre-MVP — picking it commits you to filling in
+  vibesmith is pre-MVP — picking it commits you to filling in
   framework gaps as you hit them.
 - **You're targeting native consoles or native mobile** as a
-  primary release. Pick a native engine. WebGL is Vibesmith's
+  primary release. Pick a native engine. WebGL is vibesmith's
   home.
 - **You're allergic to AI-touched code.** The methodology assumes
   it. The tooling assumes it. The doc surface is designed for it.

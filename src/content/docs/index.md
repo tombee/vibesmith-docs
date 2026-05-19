@@ -1,9 +1,9 @@
 ---
-title: Vibesmith
+title: vibesmith
 description: AI-augmented framework for building WebGL games with React Three Fiber. Guides, cookbook, anti-patterns, and reference.
 ---
 
-Vibesmith is an editor + framework for building games that run on
+vibesmith is an editor + framework for building games that run on
 the web — built on Three.js, React Three Fiber, and Vite, ships
 as a desktop app that opens project folders, and designed from the
 ground up to be driven by AI coding assistants working alongside a
@@ -15,7 +15,7 @@ the framework.
 
 ## Read this first
 
-- [**What Vibesmith is**](/vibesmith-docs/introduction/) — friendly
+- [**What vibesmith is**](/vibesmith-docs/introduction/) — friendly
   intro: what you get, who it's for, what it deliberately isn't.
 - [**Comparisons FAQ**](/vibesmith-docs/faq/) — vs Three.js, R3F,
   Babylon.js, native engines compiled to the web, web-native
@@ -35,7 +35,7 @@ the framework.
 
 ## Who this is for
 
-- **Developers building on Vibesmith.** The cookbook + reference is the
+- **Developers building on vibesmith.** The cookbook + reference is the
   fastest path from "I have a new project" to "I have a working,
   performant scene".
 - **AI coding agents.** Both the rendered docs and a parallel agent-only
@@ -45,7 +45,7 @@ the framework.
 
 ## What's NOT here
 
-This site covers *using* Vibesmith. Docs about *building* Vibesmith
+This site covers *using* vibesmith. Docs about *building* vibesmith
 itself — ADRs, internal roadmap, methodology, distribution model, the
 proactive ledger — live in the private framework repo. Those are
 internal architecture artifacts and intentionally not published.

@@ -1,9 +1,9 @@
 ---
 title: 'MCP surface — Tier-1 router, Tier-2 deferred catalog, Resources, project-shape gating'
-description: 'How an external assistant reaches a Vibesmith project over MCP — the always-loaded Tier-1 router (≤ 4k schema tokens, ~10–15 tools), the Tier-2 deferred catalog whose schemas load via `tools_find`, the `vibesmith://` Resources surface for read data, and `vibesmith.toml [project].type / [capabilities] / [mcp]` project-shape gating.'
+description: 'How an external assistant reaches a vibesmith project over MCP — the always-loaded Tier-1 router (≤ 4k schema tokens, ~10–15 tools), the Tier-2 deferred catalog whose schemas load via `tools_find`, the `vibesmith://` Resources surface for read data, and `vibesmith.toml [project].type / [capabilities] / [mcp]` project-shape gating.'
 ---
 
-> **Framework. Game-agnostic.** Vibesmith aspires to expose every
+> **Framework. Game-agnostic.** vibesmith aspires to expose every
 > framework capability via MCP so any assistant (Claude Code,
 > Codex CLI, Copilot, Cursor, Cline, custom orchestrators) can
 > drive the full pipeline. A flat tool list at that scope
@@ -64,7 +64,7 @@ Once the assistant has the schema, it calls the tool through
 
 MCP supports both **Tools** (action endpoints with full schemas)
 and **Resources** (read-only data with URIs + lazy fetch).
-Vibesmith reserves Tools for mutations + side effects; every
+vibesmith reserves Tools for mutations + side effects; every
 read flows through Resources:
 
 | Read | Resource URI |

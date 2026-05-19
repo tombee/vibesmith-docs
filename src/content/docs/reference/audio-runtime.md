@@ -1,10 +1,10 @@
 ---
 title: 'Audio runtime — WebAudio wrapper, scene-graph emitters, mixer buses'
-description: 'The framework''s audio surface. WebAudio AudioContext / AudioBufferSourceNode / PannerNode stay underneath; Vibesmith adds a scene-graph-aware wrapper above — AudioEmitter components on Object3D, a fixed five-bus mixer, recipe-canon adapter, scenario capture + replay, deferred-init autoplay gate.'
+description: 'The framework''s audio surface. WebAudio AudioContext / AudioBufferSourceNode / PannerNode stay underneath; vibesmith adds a scene-graph-aware wrapper above — AudioEmitter components on Object3D, a fixed five-bus mixer, recipe-canon adapter, scenario capture + replay, deferred-init autoplay gate.'
 ---
 
 The framework's audio surface. WebAudio's `AudioContext` +
-`AudioBufferSourceNode` + `PannerNode` stay underneath; Vibesmith
+`AudioBufferSourceNode` + `PannerNode` stay underneath; vibesmith
 adds a scene-graph-aware wrapper above so consumers attach sound
 to nodes the same way they attach scripts. No consumer ships its
 own WebAudio plumbing.

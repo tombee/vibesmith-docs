@@ -118,9 +118,9 @@ reference for how Tier-2 deferral works).
 - [Prefab system reference](../reference/prefab-system.md) —
   same Zod-schema pattern for prefab recipes.
 - [Principled non-features](/vibesmith-docs/principled-non-features/)
-  — why Vibesmith never rewrites your JSX (and what it does
+  — why vibesmith never rewrites your JSX (and what it does
   instead).
 - [Engine patterns](../reference/engine-patterns.md) —
-  Vibesmith's `defineGameScript` parameter schema is the
+  vibesmith's `defineGameScript` parameter schema is the
   framework's analogue of Unity's `[SerializeField]` and
   Bevy's `Reflect`-derived component editing.

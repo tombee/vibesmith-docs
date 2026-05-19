@@ -1,9 +1,9 @@
 ---
-title: 'Install Vibesmith MCP into your coding assistant'
-description: 'How to wire Vibesmith into Claude Code, Codex CLI, or GitHub Copilot (VS Code Agent mode). Idempotent install via `vibesmith mcp install <assistant>`; diagnose + uninstall surfaces; auth + scope guidance per host.'
+title: 'Install vibesmith MCP into your coding assistant'
+description: 'How to wire vibesmith into Claude Code, Codex CLI, or GitHub Copilot (VS Code Agent mode). Idempotent install via `vibesmith mcp install <assistant>`; diagnose + uninstall surfaces; auth + scope guidance per host.'
 ---
 
-> **For consumers.** Vibesmith does not ship its own chat agent.
+> **For consumers.** vibesmith does not ship its own chat agent.
 > Pair the framework with the coding assistant you already pay
 > for. Three subscription tiers are first-class: **Claude Max →
 > Claude Code**, **GitHub Copilot Pro/Business → VS Code Agent
@@ -33,7 +33,7 @@ first-class assistants.
 ```sh
 vibesmith mcp install claude-code
 # scope=user
-# add Vibesmith MCP entry to ~/.claude.json
+# add vibesmith MCP entry to ~/.claude.json
 #   + "mcpServers": { "vibesmith": { "command": "npx", "args": [...], "env": {} } }
 # wrote ~/.claude.json
 ```
@@ -54,14 +54,14 @@ fetching.
 
 ## Codex CLI
 
-Codex CLI uses a TOML config rather than JSON. Vibesmith owns
+Codex CLI uses a TOML config rather than JSON. vibesmith owns
 the `[mcp_servers.vibesmith]` block + leaves the rest of the
 file untouched.
 
 ```sh
 vibesmith mcp install codex
 # scope=user
-# add Vibesmith MCP entry to ~/.codex/config.toml
+# add vibesmith MCP entry to ~/.codex/config.toml
 # wrote ~/.codex/config.toml
 ```
 
@@ -88,7 +88,7 @@ demand.
 ```sh
 vibesmith mcp install copilot
 # scope=project
-# add Vibesmith MCP entry to ./.vscode/mcp.json
+# add vibesmith MCP entry to ./.vscode/mcp.json
 # wrote ./.vscode/mcp.json
 ```
 
@@ -118,13 +118,13 @@ vibesmith mcp diagnose
 #     host: 1.5.2 — /Users/you/.claude.json
 #     entry:   ok
 #     claude 1.5.2 on PATH
-#     Vibesmith MCP entry matches the current plan
+#     vibesmith MCP entry matches the current plan
 #
 #   Codex CLI (codex)
 #     host: 0.20.3 — /Users/you/.codex/config.toml
 #     entry:   ok
 #     codex 0.20.3 on PATH
-#     Vibesmith MCP entry matches the current plan
+#     vibesmith MCP entry matches the current plan
 #
 #   GitHub Copilot (copilot)
 #     host not detected
@@ -145,11 +145,11 @@ CI pipelines can branch on the exit code.
 ```sh
 vibesmith mcp uninstall claude-code
 # scope=user
-# remove Vibesmith MCP entry from ~/.claude.json
-# removed Vibesmith entry from ~/.claude.json
+# remove vibesmith MCP entry from ~/.claude.json
+# removed vibesmith entry from ~/.claude.json
 ```
 
-Symmetric with install. Removes only the Vibesmith server
+Symmetric with install. Removes only the vibesmith server
 entry; other MCP servers + top-level config keys are
 preserved.
 

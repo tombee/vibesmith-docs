@@ -16,7 +16,7 @@ Conventions:
 > **AI-fluency note.** Where a Unity-ism's natural R3F equivalent
 > would tax an AI coding assistant (visual JSX rewrite, shadow
 > scene file, registry-by-name indirection, drag-reference-onto-
-> field), Vibesmith picks the *idiomatic* alternative — even when
+> field), vibesmith picks the *idiomatic* alternative — even when
 > it costs some authoring ergonomics — and names the refusal in
 > [Principled non-features](/vibesmith-docs/principled-non-features/).
 > The framework's bet is that AI legibility compounds; this

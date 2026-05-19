@@ -1,9 +1,9 @@
 ---
-title: 'Task context — the contract every AI surface in Vibesmith calls through'
+title: 'Task context — the contract every AI surface in vibesmith calls through'
 description: 'TaskManifest schema, the v0 ~15-task core taxonomy, the context.assemble MCP surface, the TaskContextBundle wire format, and how to register your own tasks in the project namespace.'
 ---
 
-> **Framework. Game-agnostic.** Vibesmith does not ship its own
+> **Framework. Game-agnostic.** vibesmith does not ship its own
 > chat agent. It ships a *contract* — `context.assemble(task_id,
 > state_ref)` — that every AI surface (cmd+P quick actions, the
 > first-party chat panel, proactive tips, external coding
@@ -128,7 +128,7 @@ compose their own prompt.
 
 ## Trying it from the dev shell
 
-Vibesmith ships the **Task Context Preview** standard extension
+vibesmith ships the **Task Context Preview** standard extension
 (`task-context-preview`). Enable it in `vibesmith.toml`:
 
 ```toml

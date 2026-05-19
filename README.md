@@ -1,13 +1,13 @@
 # vibesmith-docs
 
-Public docs for the [Vibesmith](https://github.com/tombee/vibesmith)
+Public docs for the [vibesmith](https://github.com/tombee/vibesmith)
 framework. Built with [Astro Starlight](https://starlight.astro.build).
 
 Live site: <https://tombee.github.io/vibesmith-docs/>
 
 ## What lives here
 
-Consumer-facing content — anyone *building on* Vibesmith should be
+Consumer-facing content — anyone *building on* vibesmith should be
 able to do their work without reading the framework source:
 
 - **Cookbook** — short, code-forward recipes (instancing,
