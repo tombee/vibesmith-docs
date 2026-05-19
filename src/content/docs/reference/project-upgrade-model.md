@@ -1,9 +1,9 @@
 ---
 title: 'Project upgrade model'
-description: 'How a Vibesmith project survives a framework binary upgrade — customer-owned vs framework-managed split, [deps] install flow, vibesmith doctor health report, opt-in starter diff, semver upgrade ceremony.'
+description: 'How a vibesmith project survives a framework binary upgrade — customer-owned vs framework-managed split, [deps] install flow, vibesmith doctor health report, opt-in starter diff, semver upgrade ceremony.'
 ---
 
-How a Vibesmith project survives a framework binary upgrade.
+How a vibesmith project survives a framework binary upgrade.
 Covers: what's customer-owned vs framework-managed inside the
 project folder, the `[deps]` install flow, the `vibesmith doctor`
 health surface, the opt-in starter-diff at upgrade time, and the
@@ -17,9 +17,9 @@ versions.
 
 ## The shape of the question
 
-A customer scaffolds a project against Vibesmith `0.0.1`. They
+A customer scaffolds a project against vibesmith `0.0.1`. They
 edit scenes, write scripts, add packages via `[deps]`, configure
-their AI agents. Six months later they install Vibesmith `0.4.0`
+their AI agents. Six months later they install vibesmith `0.4.0`
 and try to open the project. What happens?
 
 The Unity reference is the right one: don't auto-migrate content,
@@ -28,7 +28,7 @@ to upgrade their own pieces. Unity opens a v2022 project in v6 by
 warning loudly + offering a one-shot bump; it does not silently
 rewrite the user's `.unity` scenes.
 
-Vibesmith commits to the same posture.
+vibesmith commits to the same posture.
 
 ## In one sentence
 
@@ -128,7 +128,7 @@ The binary's bundled runtime (React, Three, R3F, dockview,
 `@vibesmith/runtime`) is the *only* copy. `[deps]` listing any of
 them is an error — `vibesmith doctor` fails with:
 
-> *Dependencies overlap with the Vibesmith runtime. Remove these
+> *Dependencies overlap with the vibesmith runtime. Remove these
 > from `[deps]`: react, three. The binary's copies are the only
 > copies.*
 
@@ -222,7 +222,7 @@ dispatches to the right writer:
 | Flag | Behaviour |
 |---|---|
 | `--cwd <path>` | Project root (defaults to current dir). |
-| `--framework <path>` | Vibesmith repo root (SHA-pinned shape; defaults to `../vibesmith`). |
+| `--framework <path>` | vibesmith repo root (SHA-pinned shape; defaults to `../vibesmith`). |
 | `--to <ref>` | Target ref (sha / branch / tag) for SHA-pinned consumers. Defaults to `HEAD`. |
 | `--yes` | Skip the confirm prompt. |
 | `--dry-run` | Print the plan without writing. |

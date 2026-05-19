@@ -94,7 +94,7 @@ export function useStepEvents() {
 }
 ```
 
-Vibesmith's animation runtime (Track N1) exposes a parameter
+vibesmith's animation runtime (Track N1) exposes a parameter
 binding for this — `ctx.animator(id).on('footstep', cb)` — when
 the consumer adopts it. Until then, wire it from your existing
 animation event source.

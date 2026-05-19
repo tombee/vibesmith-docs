@@ -21,6 +21,29 @@ description: '> **Framework. Game-agnostic.** How the framework consumes prebuil
 > generate new in-style assets on demand when something the project
 > needs isn't in the pack.
 
+## Reference workflow target — Synty-style modular kits
+
+Synty's POLYGON 3D packs and INTERFACE/UI packs are the
+**canonical reference workflow target** for this doc. Their
+shape — modular kits, palette/atlas-driven, low-poly, hundreds
+to thousands of meshes sharing a single palette texture,
+consistent naming conventions, GLB/FBX for 3D and PNG sprites
+for UI — is what every part of the asset-packs pipeline is built
+to handle cleanly. The packs are designed for Unity and Unreal
+but the underlying assets are pipeline-agnostic, and Synty-
+compatible art is an explicit first-class supported workflow:
+GLTF / GLB ingest is first-class, the classifier handles
+palette / atlas conventions natively, and per-pack style
+profiles derive style canon from Synty's palettes and naming.
+
+Naming Synty here pins a concrete reference target; it does not
+make Synty a load-bearing dependency. **The framework's bundled
+adapter set stays vendor-neutral by name** — `generic-fbx`,
+`glb-folder`, `atlas-palette-fbx`. A community or consumer-side
+`synty-polygon` adapter could ship later; it just isn't bundled,
+because the generic + palette-atlas adapters already cover the
+shape.
+
 ## Why this gets its own doc
 
 The asset catalogue's generic ingestion pipeline ([`asset-catalogue.md`](asset-catalogue.md))
@@ -181,10 +204,13 @@ Adapters are **plugins**, not hardcoded vendor names:
   short probe on the pack's root.
 - **The framework's bundled adapters are vendor-neutral by
   name**: `generic-fbx`, `glb-folder`, `unity-asset-bundle`,
-  `atlas-palette-fbx`. Vendor names live in consumer configuration
-  / overrides, not in the framework. (Per
-  [`AGENTS.md`](../AGENTS.md) rule #1; vendor names are
-  framework-purity-defects.)
+  `atlas-palette-fbx`. The adapter set stays vendor-neutral so
+  no single vendor becomes load-bearing, even though specific
+  vendors (notably Synty — see § "Reference workflow target"
+  above) are named in the docs as canonical workflow targets.
+  Vendor-specific *configuration* lives in the consumer's
+  project (palette-texture filenames, atlas conventions, kit
+  prefixes), not in the framework's adapter code.
 - Adapter plugins can live in:
   - The framework (curated set, ships with releases).
   - A community plugin (`@vibesmith-community/pack-adapter-*`,

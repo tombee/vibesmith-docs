@@ -1,6 +1,6 @@
 ---
 title: Quick start
-description: Scaffold a new Vibesmith project with `vibesmith init` and understand what lands on disk.
+description: Scaffold a new vibesmith project with `vibesmith init` and understand what lands on disk.
 ---
 
 ## Prerequisites
@@ -8,7 +8,7 @@ description: Scaffold a new Vibesmith project with `vibesmith init` and understa
 - Node.js 22 (recommended; the framework's pinned toolchain).
 - `pnpm` (the scaffold writes a `pnpm-lock.yaml`; you can substitute
   `npm` or `yarn`).
-- A sibling clone of the Vibesmith framework repo at `../vibesmith/`
+- A sibling clone of the vibesmith framework repo at `../vibesmith/`
   (Phase-0 distribution; Phase-2 will publish to a registry).
 
 ## Scaffold
@@ -21,7 +21,7 @@ pnpm dev
 ```
 
 You'll see a working R3F app with a rotating cube, a HUD overlay scene
-picker, and the Vibesmith dev shell (Hierarchy / Inspector / Console /
+picker, and the vibesmith dev shell (Hierarchy / Inspector / Console /
 Scenarios) mounted around it in dev mode. Production builds drop the
 dev shell entirely.
 
@@ -44,11 +44,11 @@ Framework + tooling (deletable on eject):
 | Path | What |
 |---|---|
 | `.vibesmith/config.ts` | Framework pin + project config. |
-| `.vibesmith/manifest.json` | Installed Vibesmith extensions. |
+| `.vibesmith/manifest.json` | Installed vibesmith extensions. |
 | `.mcp.json` | MCP server registry (auto-discovered by Cursor / Claude Code / Codex CLI). |
 | `AGENTS.md` | Tool-agnostic agent instructions + reading list. |
 | `agents/` | Project-specific agent prompts. |
-| `vibesmith eject` (CLI) | One-way removal of Vibesmith — dry-run by default; `--apply` to mutate. |
+| `vibesmith eject` (CLI) | One-way removal of vibesmith — dry-run by default; `--apply` to mutate. |
 
 ## Working in the project
 
@@ -72,7 +72,7 @@ Framework + tooling (deletable on eject):
 - Projects scaffolded by `vibesmith init` (this guide) — checks the
   CLI surface (`STATUS.md` framework pin, sibling-vibesmith
   checkout, biome / vitest shared configs, script wrapping).
-- Projects scaffolded by the Vibesmith desktop binary (folders
+- Projects scaffolded by the vibesmith desktop binary (folders
   with `vibesmith.toml`) — checks the binary-side contract
   (manifest validity, `[project].type`, binary compat range,
   `[deps]` drift vs `.vibesmith/deps-lock.json`, runtime overlap,
@@ -91,7 +91,7 @@ Framework + tooling (deletable on eject):
 
 ## Ejecting
 
-If you ever want to remove Vibesmith entirely:
+If you ever want to remove vibesmith entirely:
 
 ```sh
 vibesmith eject              # dry-run; prints the plan

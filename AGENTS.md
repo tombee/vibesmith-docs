@@ -5,7 +5,7 @@ repo (Cursor / Aider / Codex CLI / Claude Code / any
 AGENTS.md-aware tool).
 
 This repo hosts the public documentation site for the
-[Vibesmith framework](https://github.com/tombee/vibesmith) at
+[vibesmith framework](https://github.com/tombee/vibesmith) at
 <https://tombee.github.io/vibesmith-docs/>. Built with Astro
 Starlight, deployed to GitHub Pages on push to `main` via
 `.github/workflows/deploy.yml`.
@@ -14,7 +14,7 @@ Starlight, deployed to GitHub Pages on push to `main` via
 
 - Terse, no padding.
 - Edit existing content before creating new.
-- Game-agnostic only — Vibesmith is engine + genre-agnostic.
+- Game-agnostic only — vibesmith is engine + genre-agnostic.
   Generic vocabulary (entities, props, characters). Consumer
   game-specific tone / lore / asset choices belong in each
   consumer's `docs/game/`, not here.
@@ -78,7 +78,7 @@ Framework-internal architecture artifacts stay in
 - `roles-map.md`
 - `cross-genre-portability.md`
 
-These are about *building* Vibesmith, not *using* it. Consumers
+These are about *building* vibesmith, not *using* it. Consumers
 don't read them.
 
 ## Conventions
@@ -170,5 +170,5 @@ swap is a future option (update `site` + remove `base` in
 This site is downstream of the framework. If you're unsure
 whether content belongs here or in `tombee/vibesmith`, the
 rule of thumb: "Is this something a consumer or their agent
-needs to read to *use* Vibesmith?" → here. "Is this about *how
+needs to read to *use* vibesmith?" → here. "Is this about *how
 the framework itself is built / extended*?" → there.

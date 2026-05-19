@@ -4,7 +4,7 @@ description: 'First capability extension instance. SQLite-shaped store + ingest 
 ---
 
 > **Framework. Game-agnostic.** The asset catalogue is the first
-> instance of Vibesmith's capability-extension pattern. It turns
+> instance of vibesmith's capability-extension pattern. It turns
 > a project's 3D asset library into a queryable substrate every AI
 > surface — cmd+P quick actions, the chat panel, MCP-driven external
 > assistants — can reason about. Search semantically, find what pairs

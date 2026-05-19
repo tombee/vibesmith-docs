@@ -12,10 +12,10 @@ export default defineConfig({
 	base: BASE,
 	integrations: [
 		starlight({
-			title: 'Vibesmith',
+			title: 'vibesmith',
 			description:
-				'Public docs for the Vibesmith framework — guides, cookbook, anti-patterns, and reference for building AI-augmented WebGL games.',
-			// Vibesmith brand tokens + Space Grotesk / JetBrains Mono /
+				'Public docs for the vibesmith framework — guides, cookbook, anti-patterns, and reference for building AI-augmented WebGL games.',
+			// vibesmith brand tokens + Space Grotesk / JetBrains Mono /
 			// system-ui via the theme CSS file. Source of truth for the
 			// tokens themselves is `apps/vibesmith-app/index.html` in
 			// the framework repo; this file mirrors them.
@@ -44,7 +44,7 @@ export default defineConfig({
 					label: 'Getting started',
 					items: [
 						{ label: 'Home', slug: 'index' },
-						{ label: 'What Vibesmith is', slug: 'introduction' },
+						{ label: 'What vibesmith is', slug: 'introduction' },
 						{ label: 'Comparisons FAQ', slug: 'faq' },
 						{ label: 'Positioning', slug: 'positioning' },
 						{ label: 'Quick start', slug: 'getting-started/quick-start' },

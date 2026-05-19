@@ -1,41 +1,127 @@
 ---
 title: 'Positioning — what we are betting on'
-description: 'The strategic shape of Vibesmith. The narrow runtime bet, the broad intelligence-layer bet, and why we deliberately are not a code abstraction over multiple game engines.'
+description: 'The strategic shape of vibesmith. The narrow runtime bet, the broad intelligence-layer bet, and why we deliberately are not a code abstraction over multiple game engines.'
 ---
 
-Vibesmith is not trying to be every framework for every game. The
+vibesmith is not trying to be every framework for every game. The
 target is narrow, the bet is specific, the limits are real. This
 page states them in one place, so you can decide whether to bet on
 the framework today, plan around it for later, or pick something
 else.
 
 For a shorter "what you get" intro, start at
-[What Vibesmith is](/vibesmith-docs/introduction/). For the
+[What vibesmith is](/vibesmith-docs/introduction/). For the
 honest picker against neighbouring stacks, see
 the [comparisons FAQ](/vibesmith-docs/faq/). This page is the
 deeper *why* underneath both.
 
+## The one-line shape
+
+**vibesmith is an opinionated AI-assisted Three.js framework for
+building games and interactive experiences — batteries included
+but optional.** Every default exists for a reason; every default
+is overridable.
+
+## The problem vibesmith targets
+
+AI-assisted game development today is a lottery. You prompt an
+assistant, you get code that runs, and you end up with an
+effectively black-box project — hard to refine because the
+assistant had no context to be coherent against, hard to grow
+because there's no substrate for the next session's assistant to
+inherit. The win on day one becomes the burden on day thirty.
+
+vibesmith's job is to **make AI gamedev legible and refinable.**
+Canon, asset catalogue, recipe library, validation pipeline, the
+inspector / AI workspace, capability orchestration — each is one
+face of the same answer. The framework's value compounds with
+use; the assistant's output gets *more* coherent over the
+project's life, not less.
+
+The hardest test is the *specialised creative domains* where AI
+alone is weakest: **VFX, shaders, skeletal animation, cutscenes,
+audio mixing, gameplay feel.** Closing that gap is a
+first-priority design pressure. Every framework surface that
+touches these domains is built for *review + point-and-click
+refinement*, not "prompt and pray" — curated recipe libraries the
+assistant retrieves from, preview + slider surfaces for
+parameters, AI-augmented review actions (cmd+P
+`shader.explain-this`, vfx-critic, etc.), and a director
+apply-pipeline with diff preview + one-click accept / reject.
+
+## What vibesmith is, and isn't
+
+- **Vs PlayCanvas, Babylon.js, Three.js alone.** Those are
+  rendering engines. vibesmith uses Three.js as its rendering
+  substrate — the relationship is closer to *Next.js → React*
+  than to *Babylon → PlayCanvas*. We don't compete with the
+  engine; we sit above it.
+- **Vs Unity / Unreal / Godot.** Those are full editor-driven
+  engines optimised for team workflows, with scripting layers
+  that arrived before LLM-assisted development was practical.
+  vibesmith is AI-native by design.
+- **Vs a coding assistant against bare Three.js.** A coding
+  assistant alone gives you the lottery above. vibesmith gives
+  the same assistant canon, catalogue, recipes, and project
+  shape that compound across sessions.
+
+vibesmith ships with opinions — ECS via miniplex or koota,
+asset pipeline conventions, audio + physics integration (Rapier
+first), UI patterns, build setup. You can opt out of any of
+them. The defaults exist so a developer who would otherwise
+spend a week wiring them doesn't have to.
+
+Games built with vibesmith are Three.js / R3F games. Consumer
+code reads as idiomatic R3F + ecosystem patterns; the framework
+provides typed adapter components (`<RigidBody>`, `<Animator>`,
+`<AudioEmitter>`, `<Particles>`, `defineGameScript`) where they
+integrate work an idiomatic R3F user would otherwise hand-wire.
+The vibesmith app is an inspector + AI collaboration workspace,
+not an editor — it surfaces what the assistant built and
+supports reviewing and refining the output, but it doesn't
+replicate Three.js authoring tools or compete with engine
+editors. Projects remain buildable and editable without AI; the
+framework still works, the value proposition just shrinks.
+
 ## The two-layer bet
 
-Vibesmith is two bets stacked.
+vibesmith is two bets stacked.
 
 ### Bet 1 — The runtime (narrow, deliberate)
 
-TypeScript + React Three Fiber + Three.js on WebGPU-default,
-WebGL 2-fallback, delivered as a desktop editor that opens
-project folders plus a Tauri / browser runtime. Web-first by
-construction.
+**Three.js via React Three Fiber, with TypeScript throughout,
+is the explicit primary v1 target — not one of several engine
+options.** WebGPU-default, WebGL 2 fallback, delivered as a
+desktop editor that opens project folders plus a Tauri / browser
+runtime. Web-first by construction.
 
-This is honestly a **narrow runtime bet** today. Browser games
-are a small slice of the games market by revenue. AAA, console,
-and native mobile dominate the industry's centre of mass.
-WebGPU adoption is still narrow in production. Browser canvas
-constrains genres — card games, roguelikes, top-down or 2.5D
-RPGs, narrative games, casual multiplayer, simulation,
-incremental, puzzle, tactics, and prototypes across any genre
-are the natural fit. AAA shooters, open-world at native scale,
-or games whose value proposition is "best-in-class rendering"
-are not.
+This is a deliberate strategic choice. Three.js has by far the
+largest open-source 3D web ecosystem and the most AI training
+data of any 3D library — for an AI-first framework, that
+ecosystem advantage is the central multiplier. R3F's component
+model maps cleanly to canon, recipes, and validation patterns.
+TypeScript catches AI hallucinations at compile time. Bevy,
+Godot, MonoGame+Nez, and Unity are deferred for v1; the
+intelligence layer's contract-shape keeps adapter-based support
+*architecturally possible* without paying any tax today, but the
+v1 focus is going deep on one stack, not thin across many.
+
+This is honestly still a **narrow runtime bet** today. Browser
+games are a small slice of the games market by revenue. AAA,
+console, and native mobile dominate the industry's centre of
+mass. WebGPU adoption is still narrow in production. Browser
+canvas constrains genres — action-feel native games with tight
+input requirements, AAA shooters, and high-budget cinematic
+games aren't the natural fit. What *is*, and what the framework
+is sized for: **MMO-style experiences, deckbuilders, roguelites,
+narrative games, configurators, tools-that-are-games, social
+experiences, and ambitious WebGPU-rendered worlds at genuine
+scale.** The reference design target is a RuneScape-scale
+stylized WebGPU MMO with Synty-style modular assets — not
+aspirational, the design target. ECS via miniplex or koota is
+the default for non-trivial state; instanced rendering is
+first-class; the asset catalogue is built for thousands of
+assets from day one.
 
 The bet is that **AI coding-assistant fluency on idiomatic
 TypeScript + R3F + web standards compensates for the
@@ -96,13 +182,13 @@ Three corollaries follow.
 
 ### 1. Encouraged architecture, no framework class to inherit
 
-The patterns Vibesmith documents — a world-model boundary
+The patterns vibesmith documents — a world-model boundary
 between game state and renderer, ECS-shape, pure-function
 simulation, file/JSON-as-contract, web standards used directly
 — are *consumer-side architectural disciplines*. We recommend
 them, document them, and design the framework so following them
 is the path of least resistance. We don't ship an ECS
-framework, a Vibesmith base class, or a parallel runtime API
+framework, a vibesmith base class, or a parallel runtime API
 surface that gates access to engine features.
 
 ECS shape (Bevy, Flecs, Unity DOTS, the Overwatch architecture
@@ -151,12 +237,12 @@ semantic shape is preserved across the language boundary
 because the structural shape is already aligned with how the
 target engine thinks.
 
-If the same code were wrapped in Vibesmith-flavoured framework
+If the same code were wrapped in vibesmith-flavoured framework
 APIs (a `vibesmith.scene.spawn()`-style surface, framework base
 classes, custom decorators), an AI agent would have to
 translate *both* the semantics *and* the structural shape
 simultaneously — much harder, much more error-prone, and the
-assistant's training corpus for "Vibesmith → other engine" is
+assistant's training corpus for "vibesmith → other engine" is
 empty.
 
 The portability story is therefore: *encourage industry-standard
@@ -165,7 +251,7 @@ a current-day benefit for any consumer doing AI-assisted
 refactoring or considering a port — not a hypothetical future
 payoff.
 
-## Who Vibesmith is for
+## Who vibesmith is for
 
 - **Solo developers and small teams.** Cost-sensitive. Often
   already running local generative tools (ComfyUI, Blender).
@@ -185,7 +271,7 @@ payoff.
   assistant is doing meaningful work. The framework still works
   without one; the value proposition shrinks proportionally.
 
-## Who Vibesmith is not for
+## Who vibesmith is not for
 
 - Teams shipping a commercial release this year on a stack
   that requires native console output.
@@ -198,19 +284,19 @@ payoff.
 
 The shorter version of this list, plus the picker against
 neighbouring stacks, lives in
-[What Vibesmith is](/vibesmith-docs/introduction/) and the
+[What vibesmith is](/vibesmith-docs/introduction/) and the
 [comparisons FAQ](/vibesmith-docs/faq/).
 
 ## Bevy as the canonical future engine target
 
-Vibesmith's intelligence-layer-as-durable bet is currently an
+vibesmith's intelligence-layer-as-durable bet is currently an
 architectural property. **Bevy is the canonical future
 proving-ground** that would turn it into a demonstrated claim.
 
 Why Bevy specifically:
 
 - **ECS is native, not a discipline.** Bevy is ECS to its
-  bones. The world-model boundary Vibesmith encourages on the
+  bones. The world-model boundary vibesmith encourages on the
   consumer side maps directly. Game state structured as ECS in
   TypeScript transfers to Bevy as a mechanical translation —
   not a semantic rewrite.
@@ -224,7 +310,7 @@ Why Bevy specifically:
   layer over MCP and file contracts. The runtimes don't get
   unified; the substrate above them does.
 - **Modularity philosophy matches.** Bevy itself is
-  "pick the parts you need." Same shape as Vibesmith's
+  "pick the parts you need." Same shape as vibesmith's
   intelligence-layer-plus-runtime split.
 
 **The pre-1.0 caveat is honest.** Bevy currently ships with
@@ -269,9 +355,9 @@ clearly.
 **Signals the bet is paying off:**
 
 - Game code reads as idiomatic TypeScript + R3F. An outside
-  reviewer can't tell which parts are "Vibesmith" without
+  reviewer can't tell which parts are "vibesmith" without
   checking imports.
-- AI coding assistants demonstrably iterate faster on Vibesmith
+- AI coding assistants demonstrably iterate faster on vibesmith
   consumer projects than on comparable native-engine projects.
 - Framework APIs survive periodic AI-fluency audits without the
   surface accumulating wrapper layers that fail the test.
@@ -280,7 +366,7 @@ clearly.
 
 **Signals the bet has gone wrong:**
 
-- Consumer code looks "Vibesmith-flavoured" in ways that hurt
+- Consumer code looks "vibesmith-flavoured" in ways that hurt
   assistant fluency.
 - The intelligence layer accumulates TS-only assumptions that
   make cross-engine use impractical without rebuilding contracts.
@@ -289,7 +375,7 @@ clearly.
 - Web / handheld-PC distribution viability collapses faster
   than the intelligence-layer bet can compensate.
 
-If you're evaluating Vibesmith for a serious project, these
+If you're evaluating vibesmith for a serious project, these
 are the things to watch — both ours and your own as you build.
 
 ## Where to read next

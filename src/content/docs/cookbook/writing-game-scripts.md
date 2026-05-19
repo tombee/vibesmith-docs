@@ -3,7 +3,7 @@ title: 'Writing a game script'
 description: 'How a project script registers behaviour via defineGameScript, what the GameScriptContext gives you, and how the lifecycle (mount → tick → unmount) sequences against R3F.'
 ---
 
-For projects opened by the Vibesmith desktop binary (folders with
+For projects opened by the vibesmith desktop binary (folders with
 `vibesmith.toml`), runtime behaviour lives in plain TypeScript
 under `scripts/`. The starter wizard writes `scripts/project.ts`
 already; this recipe explains what that file does, what you can

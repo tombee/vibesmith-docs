@@ -4,7 +4,7 @@ description: 'BYOK chat panel inside the dev tooling. For users with an LLM API 
 ---
 
 > **Framework. Game-agnostic.** A bring-your-own-key (BYOK) chat
-> panel directly inside the Vibesmith dev tooling — for the
+> panel directly inside the vibesmith dev tooling — for the
 > slice of indie devs who have an LLM API key (Anthropic /
 > OpenAI / Google / OpenAI-compatible local like Ollama or
 > llama.cpp) but no monthly coding-assistant subscription. The
@@ -99,7 +99,7 @@ Every assistant message displays its token usage inline:
 in 1248 · out 372 · cached 980
 ```
 
-The meter is **token-only**. Vibesmith does **not** convert
+The meter is **token-only**. vibesmith does **not** convert
 to dollars because subscription assistants don't publish $/tok
 rates honestly and don't formally disclose plan allowances —
 any conversion would be misleading. The meter exists so you
