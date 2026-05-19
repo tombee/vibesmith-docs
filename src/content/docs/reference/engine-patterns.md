@@ -624,6 +624,51 @@ shard, not many small lobbies), matchmaking is trivial: `joinRoom("world")`.
 
 ---
 
+## Patterns we deliberately don't copy
+
+The sections above index patterns vibesmith *does* implement
+(often under a renamed surface). This section inverts that —
+patterns established engines ship as load-bearing primitives
+that vibesmith **refuses** to copy, with one-line reasoning
+and the vibesmith equivalent. Catalogued here so the *absence*
+is intentional and discoverable, not an oversight. Sibling of
+[Principled non-features](/principled-non-features/) — that doc
+names what we don't ship; this section names what we don't
+copy.
+
+| Pattern | Engine | vibesmith reason | vibesmith equivalent |
+|---|---|---|---|
+| **Magic method names** (`Awake` / `Start` / `Update` / `LateUpdate` / `OnDestroy` looked up by string) | Unity | Refactor-hostile (rename = silent breakage); IDE can't "find references" reliably; no compile-time contract. | Explicit factory registration via `defineGameScript({ id, onStart, onUpdate, onDestroy })`. The hook *is* a property the type system enforces. |
+| **`GetComponent<T>()` reflection** | Unity | Runtime lookup with no compile-time guarantee the component exists; diffuse coupling across sibling components on the same GameObject; null-check ceremony everywhere. | Typed `ctx` dependency-injection bag (`ctx.physics`, `ctx.audio`, `ctx.animator(id)`). Cross-script communication is `ctx.emit(signalName, payload)`, not GetComponent + method call. |
+| **MonoBehaviour class inheritance** | Unity | Composition > inheritance; "extends MonoBehaviour" couples every script to engine internals; no first-class way to share behaviour without diamond-problem ceremony. | Factory registration. `defineGameScript({...})` returns a typed value; behaviour-sharing is plain function composition + shared `ctx` capabilities. No base class. |
+| **Coroutine `IEnumerator` DSL** (`yield return new WaitForSeconds(1f)`) | Unity | A bespoke DSL that mirrors what TS / JS already provide natively via `async`/`await`. Adds a separate mental model that doesn't compose with Promises / AbortController / `Promise.race`. | Native `async`/`await` + `ctx.wait(ms, signal?)` + `AbortController` for cancellation. Same expressive power, zero DSL. |
+| **IMGUI / OnGUI immediate-mode debug UI** | Unity | Immediate-mode debug GUIs leak into shipped games; per-script `OnGUI` allocates every frame; styling lives in C# not CSS; impossible to share with the dev-shell's panel surface. | Standard-extension panels + leva for runtime parameter tweaking. Debug UI lives in the dev shell, not the game. |
+| **`[SerializeField]` reflection** (private-field inspector exposure) | Unity | Couples inspector visibility to language-level access modifiers; can't carry validation, defaults, range constraints, or grouping without an attribute soup; the same schema isn't reusable for AI assistants / scaffolding / docs. | Zod-schema-declared `parameters` on `defineGameScript`. One schema feeds the inspector, AI-assistant context, default values, validation, and serialised snapshots. |
+| **`@export` reflection** (Godot's equivalent of `[SerializeField]`) | Godot | Same problem as Unity's `[SerializeField]` — relies on language-level reflection (GDScript-only, not portable to typed languages); schema duplicated across runtime / editor / save formats. | Same zod-schema surface. |
+| **GDScript magic `_process` / `_ready` / `_physics_process`** | Godot | Magic-name lifecycle hooks share Unity's refactor-hostile shape *plus* GDScript's dynamic typing makes the contract even looser. | Explicit `onUpdate` / `onStart` / `onFixedUpdate` — typed by zod-declared parameters + TS types. |
+| **Blueprint visual scripting** | Unreal | Diff-hostile (binary asset), tooling-hostile (no grep), AI-assistant-hostile (vision-only), pedagogy-hostile (no transferable mental model). The "designer-friendly" pitch is undercut by the reality that any non-trivial Blueprint reaches the readability ceiling fast. | Text TS + zod schemas. Designer-friendliness comes from the dev-shell inspector + cmd+P quick actions + AI assistant, not a parallel visual language. |
+| **UFUNCTION / UPROPERTY / UCLASS macro ceremony** | Unreal | Macro-driven code-generation that exists because C++ has no reflection. TS gets the same affordance from `import` + types + zod — no macros required; no parallel header generation. | Plain TS exports + zod schemas. The build step is `tsc`; no header tool. |
+| **Class-based UObject inheritance** (UPawn / ACharacter / UActor) | Unreal | Same composition-over-inheritance argument as Unity's MonoBehaviour, escalated — Unreal pushes deep hierarchies (UObject → AActor → APawn → ACharacter → MyCharacter). | Composition. A "character" is a `<RigidBody>` + `<Animator>` + `defineGameScript` triple — assembled, not inherited. |
+| **Tags + Layers + Gameplay Tags as string-keyed lookup** | Unity / Godot / Unreal | Name-string fragility (typos compile fine); flat namespace fights modular design; "GameObject.Find" lookups defeat tree-shaking. | Typed ECS-shape components (miniplex / koota); query by component type, not by name. |
+| **`GameObject.Find` / `get_node("Path/To/Node")` / `GetActorOfClass`** | Unity / Godot / Unreal | String-keyed scene-graph lookup is the same fragility class as tags. Breaks on rename; can't be statically analysed; encourages spooky-action-at-a-distance. | Explicit refs (React `useRef`); store subscriptions (zustand); typed `ctx` access. |
+| **`SendMessage` / `call_group` / Blueprint Message Bus** | Unity / Godot / Unreal | String-named dispatch with no compile-time contract on payload shape; degrades to runtime errors. | Typed `ctx.emit(signalName, payload)` — payloads are zod-typed; signal names are TS literal-union types per script declaration. |
+| **Per-engine custom build / cook / package pipeline** | Unity (IL2CPP + Addressables) / Unreal (Cook + Stage) / Godot (Export Templates) | The web platform already has a deterministic, well-tooled, AI-fluent build pipeline (Vite + esbuild + HTTP). Re-inventing it inside the framework loses the ecosystem. | `pnpm build` → Vite → static assets + content-hashed filenames. No "Cook & Stage" mental model; no custom asset bundler. |
+
+### Why the absences are surfaced here
+
+Onboarding agents (LLM + human refugees from established
+engines) habitually scan for the patterns they know. Without
+this section, the absence reads as "they haven't built it yet"
+when the truth is "they've decided not to."
+
+The discipline is also AI-relevant. An LLM trained on Unity
+scripts will, given the chance, *invent* `GetComponent<T>()`
+calls against vibesmith's `ctx` surface. The section above
+gives the assistant the corrective context to fall back on
+idiomatic vibesmith shape.
+
+---
+
 ## Things we don't need to think about
 
 These exist in Unity, don't exist in our stack, and don't need replacement:
