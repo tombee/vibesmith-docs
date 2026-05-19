@@ -309,7 +309,7 @@ Why this shape:
 
 The bridge can write a TSX file into the consumer's
 `dev-shell-transients/` directory. A `<TransientExtensionsHost>`
-component (exported from `@vibesmith/dev-shell`) watches that
+component (exported from `@vibesmith/editor`) watches that
 directory via `import.meta.glob`. When Claude lands a new file,
 Vite HMR re-runs the glob, the host calls
 `setTransientExtensions(...)`, and the dev shell renders the new
