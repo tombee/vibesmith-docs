@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "define-game-script",
+      "vibesmith": "defineGameScript",
+      "category": "game-loop",
+      "source": "unity",
+      "unity": "MonoBehaviour (Awake / Start / Update / OnDestroy)",
+      "godot": "Node._ready / _process / _exit_tree",
+      "unreal": "AActor (BeginPlay / Tick / EndPlay)",
+      "bevy": "Component + system (Startup / Update / cleanup)",
+      "notes": "Per-object lifecycle attached to a scene node. Mounts once, ticks per frame while play mode is on, tears down when the node unmounts.",
+      "deviations": [
+        "no inheritance — scripts are factory registrations, not subclasses",
+        "lifecycle is `onMount` / `onTick` / `onUnmount`, not Unity's Awake/Start/Update/OnDestroy quadruple"
+      ]
+    },
+    {
+      "id": "define-physics",
+      "vibesmith": "definePhysics + <RigidBody>",
+      "category": "physics",
+      "source": "unity",
+      "unity": "Rigidbody + Collider",
+      "godot": "RigidBody3D / CharacterBody3D",
+      "unreal": "UPrimitiveComponent + UPhysicsConstraintComponent",
+      "bevy": "RigidBody + Collider (bevy_rapier)",
+      "notes": "Adapter contract (Rapier / Cannon-es first-class). <RigidBody> binds a scene node to a physics body; ctx.physics gives the script raycast + query access.",
+      "deviations": [
+        "adapter-pluggable — Unity is single-engine; vibesmith ships Rapier + Cannon-es and validates the contract against both",
+        "no built-in continuous collision detection toggle (Rapier's default is sufficient for the framework's tier-0 budgets)"
+      ]
+    },
+    {
+      "id": "define-hud",
+      "vibesmith": "defineHud",
+      "category": "ui-hud",
+      "source": "general",
+      "unity": "uGUI Canvas + Canvas children",
+      "godot": "CanvasLayer + Control nodes",
+      "unreal": "UMG (Widget Blueprint)",
+      "bevy": "bevy_ui Node tree",
+      "notes": "DOM overlay rendered above the R3F canvas. Pure React + Tailwind; absolute-positioned, no 3D z-fighting concerns.",
+      "deviations": [
+        "DOM-rendered, not engine-rendered — uses CSS layout instead of the engine's UI system",
+        "no separate 'world-space UI' mode (use a billboard <Sprite> for that)"
+      ]
+    },
+    {
+      "id": "define-network-adapter",
+      "vibesmith": "defineNetworkAdapter",
+      "category": "networking",
+      "source": "vibesmith-original",
+      "originalReason": "Adapter abstraction is intentional — Unity / Godot couple networking to a specific transport (NetCode for GameObjects / High-Level Multiplayer API). vibesmith's adapter contract lets consumers swap Colyseus / WebSockets / WebRTC without rewriting the game.",
+      "unity": "NetCode for GameObjects",
+      "godot": "MultiplayerAPI",
+      "unreal": "Replication graph + RPCs",
+      "bevy": "(community: bevy_replicon)",
+      "notes": "Pluggable contract: state-delta replication + intent dispatch + reconciliation envelope. Consumer picks the transport.",
+      "deviations": [
+        "transport-agnostic — Colyseus / raw WS / WebRTC all implement the same contract",
+        "the framework owns wire-version negotiation + the intent / state-delta / reconciliation shape, not the transport"
+      ]
+    },
+    {
+      "id": "define-director",
+      "vibesmith": "defineDirector",
+      "category": "data-assets",
+      "source": "vibesmith-original",
+      "originalReason": "AI-orchestrated content authoring is novel — neither Unity / Godot / Unreal nor Bevy ship a primitive for 'AI agent proposes content interventions; framework writes them to disk with provenance.' Closest analogue is Unity's PrefabUtility-applies-prefab-overrides, but that's user-driven, not agent-driven.",
+      "unity": null,
+      "godot": null,
+      "unreal": null,
+      "bevy": null,
+      "notes": "AI-assisted scene-graph intervention surface. Recipe → director-task-io substrate → human-gated apply. Backbone of the framework's AI-maximalist methodology.",
+      "deviations": [
+        "no analogue in existing engines — entirely framework-original",
+        "provenance-first: every intervention records source/model/prompt/seed before applying"
+      ]
+    },
+    {
+      "id": "define-prefab",
+      "vibesmith": "definePrefab",
+      "category": "scene-composition",
+      "source": "unity",
+      "unity": "Prefab",
+      "godot": "PackedScene",
+      "unreal": "Blueprint Class",
+      "bevy": "Scene (.scn) + spawn helper",
+      "notes": "Content unit — recipe + generator + director + AI brief + preview. Per `docs/prefab-system.md`.",
+      "deviations": [
+        "Unity-style 'prefab' name, but the shape is recipe+generator pairs not a frozen instance — closer to Godot's PackedScene + a generator script",
+        "ships with an AI brief + preview slot for content directors"
+      ]
+    },
+    {
+      "id": "scene-composition",
+      "vibesmith": "Composition (scene.json)",
+      "category": "scene-composition",
+      "source": "unity",
+      "unity": "Scene + Hierarchy",
+      "godot": "SceneTree",
+      "unreal": "Level + Outliner",
+      "bevy": "World + Entity hierarchy",
+      "notes": "Scene-tree of nodes with transform + script attachments + child references. Persisted as JSON; loaded by the binary at project open.",
+      "deviations": [
+        "JSON-on-disk, not engine-binary — every scene is human-readable + git-diffable",
+        "no nested-prefab variants — overrides happen at the script-props layer (see scriptProps in slice 2 of UX-5)"
+      ]
+    },
+    {
+      "id": "snapshot",
+      "vibesmith": "Snapshot (.json under snapshots/)",
+      "category": "data-assets",
+      "source": "vibesmith-original",
+      "originalReason": "Snapshot-driven dev — launch-into-state + HMR-preserved iteration — has no direct engine analogue. Closest is Unity's PlayMode + custom save-game systems, but those aren't first-class authoring substrate.",
+      "unity": "(no direct equivalent — custom Save / SaveGame)",
+      "godot": null,
+      "unreal": "(no direct equivalent — custom SaveGame)",
+      "bevy": "(community: bevy_save)",
+      "notes": "First-class capture + replay of game state. Unifies dev iteration + probe inputs + bug repros.",
+      "deviations": [
+        "framework-managed format — consumer-shaped state shapes register via registerWorldModelStore",
+        "HMR-preserved: editing a script doesn't drop the snapshot's runtime state"
+      ]
+    },
+    {
+      "id": "raycast",
+      "vibesmith": "ctx.physics.raycast",
+      "category": "physics",
+      "source": "general",
+      "unity": "Physics.Raycast",
+      "godot": "PhysicsDirectSpaceState3D.intersect_ray",
+      "unreal": "LineTraceSingleByChannel",
+      "bevy": "Rapier QueryPipeline.cast_ray",
+      "notes": "Cast a ray from origin + direction; returns the first hit + its body handle. Standard collision query across every engine.",
+      "deviations": []
+    },
+    {
+      "id": "particle-system",
+      "vibesmith": "<Particles> + <Emitter>",
+      "category": "vfx",
+      "source": "unity",
+      "unity": "ParticleSystem",
+      "godot": "GPUParticles3D / CPUParticles3D",
+      "unreal": "Niagara",
+      "bevy": "(community: bevy_hanabi)",
+      "notes": "Scene-tree components for particle effects. CPU instanced-billboards (LOW/MEDIUM tier) + WebGPU-compute (HIGH/ULTRA tier) behind one consumer surface.",
+      "deviations": [
+        "two backends behind one consumer API — CPU fallback automatic on WebGL 2",
+        "recipe-canon-driven: useVfxRecipe pulls curated effect presets"
+      ]
+    },
+    {
+      "id": "animator",
+      "vibesmith": "<Animator> + ctx.animator(id)",
+      "category": "animation",
+      "source": "unity",
+      "unity": "Animator + AnimatorController",
+      "godot": "AnimationTree",
+      "unreal": "Animation Blueprint + State Machine",
+      "bevy": "AnimationPlayer + AnimationGraph",
+      "notes": "State machine + blend tree over Three's AnimationMixer. ctx.animator(id) gives scripts parameter-binding access.",
+      "deviations": [
+        "JSON-as-data graphs (TS-as-data factory) instead of Unity's binary .controller assets",
+        "no Animator override controllers — variants live in the parent graph"
+      ]
+    },
+    {
+      "id": "audio-emitter",
+      "vibesmith": "<AudioEmitter>",
+      "category": "audio",
+      "source": "unity",
+      "unity": "AudioSource",
+      "godot": "AudioStreamPlayer3D",
+      "unreal": "AudioComponent",
+      "bevy": "AudioSource (bevy_audio)",
+      "notes": "Scene-tree audio source with 3D positional panning. Fixed mixer bus hierarchy (master / music / sfx / dialogue / ambient).",
+      "deviations": [
+        "Web Audio under the hood — autoplay-gesture deferral built in",
+        "fixed bus hierarchy (no consumer-defined buses in v1) — keeps the mixer panel surface simple"
+      ]
+    }
+  ]
+}

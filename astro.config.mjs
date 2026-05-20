@@ -51,6 +51,10 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Onboarding tours',
+					items: [{ autogenerate: { directory: 'onboarding' } }],
+				},
+				{
 					label: 'Concepts',
 					items: [{ autogenerate: { directory: 'concepts' } }],
 				},

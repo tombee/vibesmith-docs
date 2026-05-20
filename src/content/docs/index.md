@@ -24,11 +24,14 @@ the framework.
   the strategic bet, the limits, and what we deliberately won't do.
 - [**Quick start**](/vibesmith-docs/getting-started/quick-start/) —
   `vibesmith init` a new project and what it sets up.
+- [**Onboarding tours**](/vibesmith-docs/onboarding/) — per-engine
+  tours of vibesmith if you're coming from Unity, Godot, Unreal,
+  or Bevy. Each starts in the vocabulary you already speak.
 - [**Concepts**](/vibesmith-docs/concepts/) — first-principles
   explainers for the words vibesmith uses (scene, prefab, script,
   snapshot, recipe, capability, provider, extension, signal,
   intent). For newcomers + as a glossary; engine refugees can skip
-  to engine patterns.
+  to the onboarding tours above instead.
 - [**Cookbook**](/vibesmith-docs/cookbook/) — short, code-forward
   recipes (instancing, animations, perf debugging, writing game
   scripts).
