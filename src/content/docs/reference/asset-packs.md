@@ -677,6 +677,10 @@ Revisit this doc when:
 - [`prefab-system.md`](prefab-system.md) — prefabs reference pack
   assets by pack-qualified ID; the prefab system's recipe-shape
   doesn't change.
+- [`kit-assembly.md`](kit-assembly.md) — Track PG-2; the
+  pack-modularity probe runs as a `vendor-adapter` validation
+  step at ingest and emits the `KitCapability` report the
+  assembly director consumes downstream.
 - [`new-project-wizard.md`](new-project-wizard.md) — "seed from
   pack" is the wizard's third flow alongside empty 3D / empty 2D.
 - [`2d-asset-presets.md`](2d-asset-presets.md) — the
