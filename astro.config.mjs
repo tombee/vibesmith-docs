@@ -51,6 +51,10 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Concepts',
+					items: [{ autogenerate: { directory: 'concepts' } }],
+				},
+				{
 					label: 'Cookbook',
 					items: [{ autogenerate: { directory: 'cookbook' } }],
 				},
