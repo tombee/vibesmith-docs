@@ -116,6 +116,9 @@ Open a project folder in the vibesmith desktop app and you get:
 
 - [Quick start](/vibesmith-docs/getting-started/quick-start/) —
   scaffold a project and see the starter cube spin.
+- [Concepts](/vibesmith-docs/concepts/) — first-principles
+  explainers for the framework's vocabulary if you're a complete
+  newcomer or want to ground yourself before code.
 - [Cookbook](/vibesmith-docs/cookbook/) — short, code-forward
   recipes once your project is running.
 - [Comparisons FAQ](/vibesmith-docs/faq/) — vs Three.js,

@@ -15,6 +15,20 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 - [Principled non-features](https://tombee.github.io/vibesmith-docs/principled-non-features/): authoring affordances Vibesmith deliberately refuses — no JSX rewrite, no visual scripting, no drag-reference-onto-field, no shadow scene file, no name-registry indirection — with what the framework provides instead. The AI-fluency bet in operation.
 - [Quick start](https://tombee.github.io/vibesmith-docs/getting-started/quick-start/): `vibesmith init` + project layout
 
+## Concepts
+
+- [Concepts index](https://tombee.github.io/vibesmith-docs/concepts/): first-principles explainers for the words vibesmith uses; for complete newcomers + as a glossary
+- [Scene](https://tombee.github.io/vibesmith-docs/concepts/scene/): what your game looks like at one moment; no `Scene` class — scenes are mounted React component trees inside the editor's `<Canvas>`
+- [Script](https://tombee.github.io/vibesmith-docs/concepts/script/): code that runs every frame on a part of the scene; `defineGameScript` + `onMount` / `onTick` / `onIntent` / `onUnmount`; bound to scene nodes by `script="<id>"`
+- [Prefab](https://tombee.github.io/vibesmith-docs/concepts/prefab/): a generative content unit (recipe + generator + critic + AI brief + preview); not a Unity-style serialised template — produces fresh compositions each run
+- [Snapshot](https://tombee.github.io/vibesmith-docs/concepts/snapshot/): captured launchable + replayable game state; the unit of UX iteration, AI authoring, and bug repro; preserved across HMR
+- [Recipe](https://tombee.github.io/vibesmith-docs/concepts/recipe/): a curated AI-readable pattern for something hard to generate from scratch — VFX, shaders, cutscenes, mixes; framework's retrieve-adapt-validate substrate
+- [Capability](https://tombee.github.io/vibesmith-docs/concepts/capability/): a thing the framework can do (image.generate, llm.call) abstracted over providers; the framework's moat layer
+- [Provider](https://tombee.github.io/vibesmith-docs/concepts/provider/): the concrete service that implements a capability; four-tier priority (local → free → pay-per-use → subscription)
+- [Extension](https://tombee.github.io/vibesmith-docs/concepts/extension/): a panel or feature that plugs into the editor; everything in the editor is one; opt-in by default post Track UX-2
+- [Intent](https://tombee.github.io/vibesmith-docs/concepts/intent/): a player action as data; `ctx.dispatch` / `onIntent`; multiplayer + replay come along for free
+- [Signal](https://tombee.github.io/vibesmith-docs/concepts/signal/): a one-way "X happened" notification; `ctx.signal` / `ctx.onSignal`; complement to intent
+
 ## Cookbook
 
 - [Cookbook index](https://tombee.github.io/vibesmith-docs/cookbook/): conventions, recipe roadmap
