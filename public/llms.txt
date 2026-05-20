@@ -15,6 +15,15 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 - [Principled non-features](https://tombee.github.io/vibesmith-docs/principled-non-features/): authoring affordances Vibesmith deliberately refuses — no JSX rewrite, no visual scripting, no drag-reference-onto-field, no shadow scene file, no name-registry indirection — with what the framework provides instead. The AI-fluency bet in operation.
 - [Quick start](https://tombee.github.io/vibesmith-docs/getting-started/quick-start/): `vibesmith init` + project layout
 
+## Onboarding tours
+
+- [Onboarding index](https://tombee.github.io/vibesmith-docs/onboarding/): per-engine tours of vibesmith — Unity / Godot / Unreal / Bevy; each starts from that engine's vocabulary and maps to vibesmith primitives, with a side-by-side rotating-cube walkthrough and the principled deviations called out
+- [From Unity](https://tombee.github.io/vibesmith-docs/onboarding/from-unity/): MonoBehaviour → `defineGameScript`, Prefab → `definePrefab`, ScriptableObject → recipes + capabilities, Animator → `<Animator>`, Scene → `<Canvas>` tree; no Blueprint, no `[SerializeField]` magic, no `GetComponent<T>()`
+- [From Godot](https://tombee.github.io/vibesmith-docs/onboarding/from-godot/): `Node._process` → `defineGameScript` `onTick`, `PackedScene` → `definePrefab`, signals → `ctx.signal` / `onSignal`, `@export` → Zod-typed parameters, AnimationTree → `<Animator>`; no `extends Node`, no `$NodePath` indirection, no scene inheritance, no autoload singletons
+- [From Unreal](https://tombee.github.io/vibesmith-docs/onboarding/from-unreal/): AActor + BeginPlay / Tick → `defineGameScript` onMount / onTick, UPROPERTY → Zod-typed parameters, Blueprint → TypeScript (no visual scripting), Niagara → `<Particles>`, Animation Blueprint → `<Animator>`; no GameInstance / GameMode hierarchy, no Lumen / Nanite, no console deployment
+- [From Bevy](https://tombee.github.io/vibesmith-docs/onboarding/from-bevy/): ECS Component + System → `defineGameScript`, PluginGroup → extensions, bevy_rapier → `<RigidBody>`, bevy_hanabi → `<Particles>`, bevy_save → first-class `Snapshot`; no ECS at the framework runtime layer (TS + R3F today, Rust + Bevy as the canonical future-engine proving-ground); explains why R3F today + parallel-runtimes framing for tomorrow
+- [Engine Rosetta data](https://tombee.github.io/vibesmith-docs/engine-rosetta.json): raw JSON the onboarding tours render their vocabulary tables from; concept ID + category + Unity / Godot / Unreal / Bevy / general / vibesmith-original source-attribution + notes + deviations; fetchable by AI assistants directly
+
 ## Concepts
 
 - [Concepts index](https://tombee.github.io/vibesmith-docs/concepts/): first-principles explainers for the words vibesmith uses; for complete newcomers + as a glossary

@@ -116,6 +116,10 @@ Open a project folder in the vibesmith desktop app and you get:
 
 - [Quick start](/vibesmith-docs/getting-started/quick-start/) —
   scaffold a project and see the starter cube spin.
+- [Onboarding tours](/vibesmith-docs/onboarding/) — per-engine
+  tours if you're coming from Unity, Godot, Unreal, or Bevy.
+  Each starts in the vocabulary you already speak and walks you
+  through the vibesmith equivalents.
 - [Concepts](/vibesmith-docs/concepts/) — first-principles
   explainers for the framework's vocabulary if you're a complete
   newcomer or want to ground yourself before code.

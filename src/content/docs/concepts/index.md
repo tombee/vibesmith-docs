@@ -10,10 +10,12 @@ without assuming you already know what a "scene" or a "prefab" is
 from another engine.
 
 If you're coming from Unity / Godot / Unreal / Bevy and want a
-*mapping* instead of a first-principles read,
-[Engine patterns](/vibesmith-docs/reference/engine-patterns/) has
-the cross-engine Rosetta. Use that page when you already have a
-mental model and need the translation.
+*mapping* instead of a first-principles read, the
+[Onboarding tours](/vibesmith-docs/onboarding/) walk you through
+vibesmith from each engine's vocabulary. The longer-form
+[Engine patterns](/vibesmith-docs/reference/engine-patterns/)
+reference has the cross-engine Rosetta in full. Use either when
+you already have a mental model and need the translation.
 
 This page is the other entry point — for **complete newcomers**
 and for anyone who'd rather start from the question *"what is this
@@ -69,6 +71,7 @@ API surface, or to a **cookbook** recipe for working code.
 
 - [Reference](/vibesmith-docs/reference/) — the per-API contract pages.
 - [Cookbook](/vibesmith-docs/cookbook/) — working code snippets.
+- [Onboarding tours](/vibesmith-docs/onboarding/) — per-engine
+  walkthroughs if you arrive from Unity / Godot / Unreal / Bevy.
 - [Engine patterns](/vibesmith-docs/reference/engine-patterns/) —
-  the cross-engine Rosetta if you arrive from Unity / Godot /
-  Unreal / Bevy.
+  the longer-form cross-engine Rosetta.
