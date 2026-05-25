@@ -301,6 +301,29 @@ deferred-init autoplay gate. WebAudio nodes stay reachable via
 
 **Status:** built-in (React + Tailwind).
 
+### HUD lifecycle equivalence
+
+Every established engine ships a **scene-scoped default UI
+tier** + a **named persistent tier** + a **never-empty viewport
+contract** + **editor distinguishability** between the two
+tiers. vibesmith follows the same four-way shape so authors
+coming from Unity / Unreal / Godot read the vocabulary directly
+and AI assistants reach for the idiomatic pattern. Full spec:
+[HUD lifecycle](/vibesmith-docs/reference/hud-lifecycle/). The
+cross-engine equivalence:
+
+| Engine | Default UI tier | Persistent tier | No-scene state | Editor distinguishability |
+|---|---|---|---|---|
+| Unity | Canvas in scene | `DontDestroyOnLoad` / additive UIScene | Always has a scene; main menu is its own UI-only scene | UI Toolkit ships dedicated UI Builder workspace |
+| Unreal | Level-Blueprint widgets | `UGameInstance` widgets / LocalPlayerSubsystem | Always has a default map (typically MainMenu) | UMG Designer is a separate asset editor — widgets not in Outliner |
+| Godot | `Control` under `CanvasLayer` in scene | `Autoload` singleton scene | Always has a `current_scene`; SceneSwitcher Autoload owns transitions | `CanvasLayer` + typed `Control` nodes (distinct icons) |
+| **vibesmith** | `<Hud id="…">` node in scene JSON + `defineSceneHud` | `defineGlobalHud` | Built-in `vibesmith-boot.scene.json` fallback | Hierarchy panel with `[scene-hud]` / `[global-hud]` tier badges |
+
+The "always-on, project-global-only" tier the framework
+originally shipped (the old `defineHud`) is kept as a
+deprecated alias of `defineGlobalHud` for one release — the
+*exceptional* tier in every engine listed, not the default.
+
 ---
 
 ## Timeline / cutscenes

@@ -56,6 +56,7 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 ## Reference
 
 - [Engine patterns](https://tombee.github.io/vibesmith-docs/reference/engine-patterns/): Unity-isms ↔ Three.js + R3F translation
+- [HUD lifecycle](https://tombee.github.io/vibesmith-docs/reference/hud-lifecycle/): two-tier HUD lifecycle — scene-scoped default via `<Hud id="…">` scene-graph node + `defineSceneHud` (mounts with the scene, unmounts on scene change); project-global persistent via `defineGlobalHud` (mounts on project open, unmounts on project close); `defineHud` deprecated alias for one release; mount-semantics table per lifecycle event; built-in `vibesmith-boot.scene.json` fallback removes the no-scene state; scenario capture / restore; hierarchy `[scene-hud]` / `[global-hud]` tier badges; schema reference; migration; end-to-end worked example
 - [Audio runtime](https://tombee.github.io/vibesmith-docs/reference/audio-runtime/): WebAudio wrapper, `<AudioEmitter>` on `Object3D`, fixed five-bus mixer, recipe-canon adapter, scenario capture + replay, deferred-init autoplay gate
 - [Scene construction](https://tombee.github.io/vibesmith-docs/reference/scene-construction/): Recipe → Generator → Composition pipeline
 - [Prefab system](https://tombee.github.io/vibesmith-docs/reference/prefab-system/): content units (recipe + generator + director + AI brief + preview)
