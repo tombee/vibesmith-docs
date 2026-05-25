@@ -69,9 +69,9 @@ defineSceneHud({ id: 'hotbar', component: Hotbar });
 
 Mount order matches the scene-JSON declaration order. The runtime
 maintains a per-scene HUD registry keyed by scene id; mounting a
-new scene tears down the previous scene's HUD registry entries
-in reverse declaration order before mounting the new scene's
-entries.
+new scene tears down every previous-scene HUD before mounting any
+of the new scene's entries (per-sibling order is React's natural
+sibling cleanup).
 
 ### Authoring discipline
 
@@ -139,12 +139,12 @@ alias is removed in the release after. See [Migration](#migration).
 | Project open | not mounted (no scene yet) | mounted in registration order |
 | Boot-scene fallback mounts | boot-scene `<Hud>` entries mount | unaffected (already mounted) |
 | Project scene loads | scene's `<Hud>` entries mount in declaration order | unaffected |
-| Scene change (load new scene) | previous scene's entries unmount in reverse order, then new scene's entries mount | unaffected |
+| Scene change (load new scene) | every previous-scene entry unmounts before any new-scene entry mounts (per-sibling order is React's natural sibling cleanup) | unaffected |
 | Scene-load error | error scene mounts (per binary), its HUDs (if any) mount | unaffected |
 | Scenario restore — same scene id | scene HUDs remount with restored state | unaffected |
 | Scenario restore — different scene id | scene HUDs swap as on a scene change | unaffected |
 | HMR — script edit | scene HUDs preserve mount state, component reloads | global HUDs preserve mount state, component reloads |
-| Project close | scene HUDs unmount with their scene | global HUDs unmount in reverse registration order |
+| Project close | scene HUDs unmount with their scene | global HUDs unmount (per-sibling order is React's natural sibling cleanup) |
 
 ### The boot-scene fallback
 
@@ -183,25 +183,59 @@ scene.
 
 ## Scenario interaction
 
-Scene-HUD registry state is captured per scene; global-HUD
-registry state is captured project-wide. The scenario serializer
-records:
+HUD lifecycle is **deterministic** — same inputs always produce
+the same mount/unmount sequence — and the lifecycle hooks the same
+capture / restore plumbing as scene-graph nodes; no parallel
+machinery.
 
-- For each mounted scene HUD: id, owning scene id, component-
-  reported state (via the standard scenario-capture hook from
-  [Scenario-driven dev](/vibesmith-docs/reference/scenario-driven-dev/)).
-- For each mounted global HUD: id, component-reported state.
+What's deterministic today:
 
-Mount order is captured deterministically from scene-JSON
-declaration order (scene HUDs) and registration order (global
-HUDs). Scenario restore unmounts and remounts in the captured
-order; if the restored scenario's scene id differs from the
-current scene id, scene HUDs swap as on a normal scene change.
+- **Scene-HUD mount order** matches scene-JSON declaration order.
+  Identical scenes produce identical mount sequences across
+  re-renders.
+- **Scene change** unmounts every previous-scene entry before any
+  new-scene entry mounts; per-sibling unmount order within the
+  previous scene is React's natural sibling-cleanup order (forward
+  declaration order at React 18 — the framework relies on React's
+  guarantee, not a custom unmount scheduler). Two scenes that both
+  declare `player-status` get separate host instances — the
+  unmount-then-mount pair runs even when ids overlap.
+- **Global-HUD mount order** matches registration order;
+  registrations from a single bootstrap module are deterministic
+  across runs.
+- **Global HUDs persist** across scene changes — the global HUD
+  overlay reads `registry.globalHuds` and re-renders only on
+  registry mutations, not on scene swaps. On project close globals
+  tear down via React's natural cleanup; the set of teardown events
+  is complete (no HUD left mounted).
+
+What the scenario envelope carries:
+
+- `currentScenePath?: string` — the project-relative scene path
+  the viewport was rendering at capture time. Populated by the
+  binary's capture flow and threaded into the scenario via the
+  `currentScenePath` capture input. Restore consults the field to
+  decide whether to swap scenes before re-applying state — if the
+  captured path differs from the currently-mounted scene, the
+  binary requests the captured scene which triggers the normal
+  scene-change unmount / remount cycle for the previous scene's
+  HUDs. Absent field means restore leaves the active scene where
+  it is (the common case when capture and restore happen on the
+  same scene).
+
+What's deferred:
+
+- **Per-HUD component-reported state.** Capturing per-HUD render
+  state (local component state, controlled-input values, etc.)
+  via a render-side state hook is a follow-up. Today the scenario
+  envelope captures registry identity + the binary's scene path;
+  the per-HUD render-state channel would extend that to round-trip
+  component state across restores. Until that ships, restoring a
+  scenario remounts each HUD's React subtree fresh from its
+  registered renderer.
 
 See [Scenario-driven dev](/vibesmith-docs/reference/scenario-driven-dev/)
-for the broader scenario contract; HUD lifecycle hooks the same
-capture / restore plumbing as scene-graph nodes, no parallel
-machinery.
+for the broader scenario contract.
 
 ---
 
@@ -358,12 +392,14 @@ defineGlobalHud({ id: 'splash', component: SplashOverlay });
    `splash` is still *registered*; it just renders null. Other
    HUDs unchanged.
 4. **User loads `dungeon.scene.json`.** Town scene unmounts;
-   `hotbar` then `player-status` unmount (reverse declaration
-   order). Dungeon's `<Hud>` entries mount in their declared
-   order. `splash` is still registered and unaffected.
+   `player-status` and `hotbar` unmount (per-sibling order is
+   React's natural sibling cleanup — the framework promise is that
+   *every* previous-scene HUD has unmounted before any
+   dungeon-scene HUD mounts). Dungeon's `<Hud>` entries then mount
+   in their declared order. `splash` is still registered and
+   unaffected.
 5. **User closes project.** All scene HUDs unmount with their
-   scene; `splash` (global) unmounts in reverse registration
-   order; HUD registries clear.
+   scene; `splash` (global) unmounts; HUD registries clear.
 
 ---
 
