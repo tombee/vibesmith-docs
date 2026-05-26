@@ -15,11 +15,17 @@ description: 'How to wire vibesmith into Claude Code, Codex CLI, or GitHub Copil
 ## TL;DR
 
 ```sh
-vibesmith mcp install claude-code   # ~/.claude.json
-vibesmith mcp install codex         # ~/.codex/config.toml
+vibesmith mcp install claude-code   # ./.mcp.json
+vibesmith mcp install codex         # ./.codex/config.toml
 vibesmith mcp install copilot       # ./.vscode/mcp.json
 vibesmith mcp diagnose              # full status report
 ```
+
+Every adapter defaults to **project scope** — the MCP entry is
+written next to your `vibesmith.toml` so it travels with the
+repo. Pass `--scope user` if you want the entry written to your
+home-dir config instead (`~/.claude.json`, `~/.codex/config.toml`;
+Copilot ignores `--scope` and is always workspace-scoped).
 
 Each command is **idempotent**: running it twice produces no
 diff. The install reports a unified-style diff before writing;
@@ -32,16 +38,18 @@ first-class assistants.
 
 ```sh
 vibesmith mcp install claude-code
-# scope=user
-# add vibesmith MCP entry to ~/.claude.json
+# scope=project
+# add vibesmith MCP entry to ./.mcp.json
 #   + "mcpServers": { "vibesmith": { "command": "npx", "args": [...], "env": {} } }
-# wrote ~/.claude.json
+# wrote ./.mcp.json
 ```
 
-**Scope.** Default is `--scope user` (writes `~/.claude.json`).
-Use `--scope project` to write `.mcp.json` next to your
-`vibesmith.toml` instead — useful when you want the entry
-versioned with the project repo.
+**Scope.** Default is `--scope project` (writes `.mcp.json` next
+to your `vibesmith.toml` so the entry is versioned with the
+repo). Pass `--scope user` to write `~/.claude.json` instead —
+useful for one-off projects you don't want polluting per-repo
+state, at the cost of a stale entry if the project moves or the
+editor's hub URL churns.
 
 **Auth.** Claude Code uses your Claude account if you're
 signed in to Claude Max; otherwise set `ANTHROPIC_API_KEY` for
@@ -60,10 +68,14 @@ file untouched.
 
 ```sh
 vibesmith mcp install codex
-# scope=user
-# add vibesmith MCP entry to ~/.codex/config.toml
-# wrote ~/.codex/config.toml
+# scope=project
+# add vibesmith MCP entry to ./.codex/config.toml
+# wrote ./.codex/config.toml
 ```
+
+**Scope.** Default is `--scope project` (writes
+`./.codex/config.toml` so the entry is versioned with the repo).
+Pass `--scope user` to write `~/.codex/config.toml` instead.
 
 **Minimum version.** Codex CLI **0.20+** for MCP support. The
 adapter detects the installed version and surfaces a lag
@@ -144,9 +156,9 @@ CI pipelines can branch on the exit code.
 
 ```sh
 vibesmith mcp uninstall claude-code
-# scope=user
-# remove vibesmith MCP entry from ~/.claude.json
-# removed vibesmith entry from ~/.claude.json
+# scope=project
+# remove vibesmith MCP entry from ./.mcp.json
+# removed vibesmith entry from ./.mcp.json
 ```
 
 Symmetric with install. Removes only the vibesmith server
