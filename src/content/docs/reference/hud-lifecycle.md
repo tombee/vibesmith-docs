@@ -394,22 +394,100 @@ All three surfaces live on `@vibesmith/runtime`.
 
 ---
 
+## Hooks
+
+A HUD component reads game state and dispatches intents by calling
+two module-exported hooks from `@vibesmith/runtime`:
+
+```ts
+import { defineSceneHud, useHudGameState, useHudDispatch } from '@vibesmith/runtime';
+
+interface GameState { coins: number }
+
+function PlayerStatus() {
+  const coins = useHudGameState((state) => (state as GameState | undefined)?.coins ?? 0);
+  const dispatch = useHudDispatch();
+  return (
+    <button onClick={() => dispatch({ type: 'spend', amount: 1 })}>
+      Coins: {coins}
+    </button>
+  );
+}
+
+defineSceneHud({ id: 'mygame/player-status', component: PlayerStatus });
+```
+
+### Signatures
+
+```ts
+function useHudGameState<T>(selector: (state: unknown) => T): T;
+function useHudDispatch(): (intent: unknown) => void;
+```
+
+- **`useHudGameState(selector)`** — calls the selector against the
+  binary's published game state. Until the project-state surface
+  ships, the selector receives `undefined` (consumers supply the
+  fallback). The contract stays stable as the underlying state
+  pipe lands; consumer HUDs that already call the hook gain real
+  behaviour without an API churn.
+- **`useHudDispatch()`** — returns the intent-dispatch fn. The
+  no-op stub today routes through the project's network adapter
+  once that surface lands.
+
+### Calling the hooks outside a registered HUD
+
+The hooks throw a helpful error when called outside the
+framework-managed mount path — the common cause is a HUD
+component rendered directly from consumer JSX rather than
+registered through `defineSceneHud` / `defineGlobalHud`. The
+error message names the registration factories so the fix is
+obvious.
+
+---
+
 ## Migration
 
-Consumers currently on `defineHud` have two paths depending on
-intent:
+Consumers have up to two migrations depending on the shape of
+their existing code:
 
-1. **Keep persistent semantics.** Rename `defineHud` →
-   `defineGlobalHud`. No other change. Deprecation warning goes
-   away.
+1. **From `defineHud` to `defineGlobalHud`.** Rename
+   `defineHud` → `defineGlobalHud`. No other change. The
+   deprecation warning goes away. If the HUD makes more sense
+   scene-scoped, add a `<Hud id="…">` node to the owning scene
+   JSON and rename to `defineSceneHud` instead.
 
-2. **Switch to scene-scoped semantics.** Add a `<Hud id="…">`
-   node to the owning scene JSON; rename `defineHud` →
-   `defineSceneHud`. The HUD now mounts / unmounts with the
-   scene.
+2. **From the deprecated `render` closure to `component` + hooks.**
+   The previous `render: (hooks) => ReactNode` shape continues to
+   work during the migration window but logs a one-time-per-session
+   deprecation warning. Extract the closure body into a real
+   component and call the [hooks](#hooks) inside it:
 
-The deprecated `defineHud` alias gives one release of breathing
-room; the release after removes it.
+   ```ts
+   // Before (deprecated):
+   defineSceneHud({
+     id: 'mygame/hotbar',
+     render: ({ useGameState, useDispatch }) => {
+       const slots = useGameState((s) => (s as { slots?: unknown[] } | undefined)?.slots ?? []);
+       const dispatch = useDispatch();
+       return <HotbarUI slots={slots} onSelect={(i) => dispatch({ type: 'select', i })} />;
+     },
+   });
+
+   // After:
+   import { useHudGameState, useHudDispatch } from '@vibesmith/runtime';
+
+   function Hotbar() {
+     const slots = useHudGameState((s) => (s as { slots?: unknown[] } | undefined)?.slots ?? []);
+     const dispatch = useHudDispatch();
+     return <HotbarUI slots={slots} onSelect={(i) => dispatch({ type: 'select', i })} />;
+   }
+
+   defineSceneHud({ id: 'mygame/hotbar', component: Hotbar });
+   ```
+
+The deprecated `defineHud` alias and the deprecated `render` field
+each give one release of breathing room; the release after removes
+them.
 
 ---
 
