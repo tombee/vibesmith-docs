@@ -223,16 +223,87 @@ What the scenario envelope carries:
   it is (the common case when capture and restore happen on the
   same scene).
 
-What's deferred:
+- `hudState?: { scene: [...], global: [...] }` — per-HUD render
+  state, captured by walking the `registerHudState(...)` registry
+  at capture time. Scene-HUD entries carry `{ sceneId, hudId,
+  state }`; global-HUD entries carry `{ hudId, state }`. Capture
+  order is deterministic — scene HUDs in scene-JSON declaration
+  order; global HUDs in registration order. The field is
+  **optional** — scenarios without per-HUD providers omit it
+  entirely and remain backwards-compatible with the prior
+  envelope shape.
 
-- **Per-HUD component-reported state.** Capturing per-HUD render
-  state (local component state, controlled-input values, etc.)
-  via a render-side state hook is a follow-up. Today the scenario
-  envelope captures registry identity + the binary's scene path;
-  the per-HUD render-state channel would extend that to round-trip
-  component state across restores. Until that ships, restoring a
-  scenario remounts each HUD's React subtree fresh from its
-  registered renderer.
+### Per-HUD `registerHudState` hook
+
+Consumers wire per-HUD state into the scenario envelope by
+calling `registerHudState(...)` from inside their HUD components.
+The registration is sync, returns a disposer, and matches the
+existing single-channel state-provider factory shape:
+
+```ts
+import { registerHudState } from '@vibesmith/snapshot-driven-dev';
+
+interface PlayerStatusState { coins: number }
+
+function PlayerStatus(): ReactNode {
+  const [coins, setCoins] = useState(0);
+  useEffect(
+    () =>
+      registerHudState<PlayerStatusState>(
+        'mygame/player-status',
+        () => ({ coins }),
+        {
+          sceneId: 'town',                       // omit for global HUDs
+          onRestore: (s) => setCoins(s.coins),   // drains restored state
+        },
+      ),
+    [coins],
+  );
+  return <span>{coins}</span>;
+}
+
+defineSceneHud({ id: 'mygame/player-status', component: PlayerStatus });
+```
+
+  - **`capture: () => state`** — sync, called once per scenario
+    capture (single-frame snapshot — providers must not round-trip
+    to a backend).
+  - **`onRestore?: (state) => void`** — sync, fires when a
+    scenario restore arrives carrying matching state. The
+    consumer drains the restored value into local React state
+    (typically `setState(restored.coins)`). Optional — a
+    read-only debug overlay that captures state but doesn't
+    reapply on restore can omit it.
+  - **`sceneId?: string`** — scene scope for scene HUDs (matches
+    the scene id in the `<Hud id="…">` node owner). Omit for
+    global HUDs.
+
+### Restore semantics
+
+Restore behaviour depends on the captured `currentScenePath`
+versus the currently-mounted scene:
+
+  - **Same scene id.** The scene HUD is already mounted; its
+    `onRestore` callback fires synchronously and the consumer's
+    `setState` drains the captured value into the live React tree
+    without a remount. Global HUDs receive the same in-place
+    restore.
+  - **Different scene id.** The binary swaps scenes per the
+    scenario's `currentScenePath`; scene A's HUDs unmount, scene
+    B's HUDs mount. Restored state for HUDs without a live
+    listener queues into a pending map and drains on each HUD's
+    mount-time `registerHudState` call. Global HUDs are
+    unaffected by the scene swap.
+  - **Single-shot consumption.** Each pending restore drains
+    exactly once. A later remount (HMR cycle, parent re-render)
+    of the same HUD does **not** re-apply stale state.
+
+### Backward compatibility
+
+Scenarios without a `hudState` channel restore cleanly — the
+absent field is treated as "no per-HUD state to seed." HUDs that
+don't call `registerHudState` mount identically to the prior
+behaviour; the channel is purely additive.
 
 See [Scenario-driven dev](/vibesmith-docs/reference/scenario-driven-dev/)
 for the broader scenario contract.
@@ -366,6 +437,35 @@ import { Hotbar } from '../ui/Hotbar';
 
 defineSceneHud({ id: 'player-status', component: PlayerStatus });
 defineSceneHud({ id: 'hotbar', component: Hotbar });
+```
+
+**`ui/PlayerStatus.tsx`** — scenario-aware HUD per
+[`registerHudState`](#per-hud-registerhudstate-hook)
+
+```tsx
+import { useEffect, useState, type ReactNode } from 'react';
+import { registerHudState } from '@vibesmith/snapshot-driven-dev';
+
+interface PlayerStatusState {
+  coins: number;
+}
+
+export function PlayerStatus(): ReactNode {
+  const [coins, setCoins] = useState(0);
+  useEffect(
+    () =>
+      registerHudState<PlayerStatusState>(
+        'player-status',
+        () => ({ coins }),
+        {
+          sceneId: 'town',
+          onRestore: (s) => setCoins(s.coins),
+        },
+      ),
+    [coins],
+  );
+  return <span data-testid="coins">{coins}</span>;
+}
 ```
 
 **`scripts/splash.ts`**
