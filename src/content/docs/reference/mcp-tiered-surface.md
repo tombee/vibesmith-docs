@@ -29,6 +29,13 @@ hand:
   `find_objects` (scene search by name / uuid / type).
 - **Task context (Track V0).** `context_list_tasks`,
   `context_describe`, `context_assemble`.
+- **Diagnostics.** `logs.tail({ limit?, level?, since? })` — recent
+  editor-shell + hub-supervisor log lines, filterable by level
+  (`info` / `warn` / `error` / `all`; default `warn`) and `since`
+  (ISO timestamp). The assistant can call this mid-task to detect
+  failures the user hasn't pasted yet (HUD warnings, parse errors,
+  context-lost). Returns `{ ts, level, source, message }[]` with
+  ANSI / source-map noise stripped.
 
 **Tier 2 — deferred catalog.** Name + one-line description +
 scenario tags only until `tools_find` resolves the JSONSchema.
