@@ -498,6 +498,78 @@ when grass matters).
 
 ---
 
+## Batched instanced kinds
+
+When a scene contains many entities of the same geometry + material
+(tiles, projectiles, units, scatter decoration), the engine collapses
+them to one draw call regardless of count. vibesmith's substrate
+shape for this is `defineInstancedKind` — sibling of
+`defineSceneNodeKind`, same scene-as-data ergonomics:
+
+```ts
+import { Matrix4, MeshStandardMaterial, PlaneGeometry } from 'three';
+import { z } from 'zod';
+import { defineInstancedKind } from '@vibesmith/runtime';
+
+defineInstancedKind({
+  id: 'acme/grass-blade',
+  geometry: new PlaneGeometry(0.1, 0.6),
+  material: new MeshStandardMaterial({ color: '#3b6b3b' }),
+  maxInstances: 4096,
+  params: z.object({
+    position: z.tuple([z.number(), z.number(), z.number()]),
+    rotation_y: z.number().default(0),
+    scale: z.number().default(1),
+  }),
+  updateInstance: (_slot, { position, rotation_y, scale }, m: Matrix4) => {
+    m.makeRotationY(rotation_y)
+      .scale({ x: scale, y: scale, z: scale } as never)
+      .setPosition(position[0], position[1], position[2]);
+  },
+});
+```
+
+Then in a `.scene.json`:
+
+```json
+{
+  "nodes": [
+    { "id": "blade-0", "kind": "acme/grass-blade", "params": { "position": [0, 0, 0] } },
+    { "id": "blade-1", "kind": "acme/grass-blade", "params": { "position": [1, 0, 0] } },
+    { "id": "blade-2", "kind": "acme/grass-blade", "params": { "position": [2, 0, 0] } }
+  ]
+}
+```
+
+N scene-node entries of the kind = one `THREE.InstancedMesh` per
+kind = one draw call, **and** N independently addressable scene-tree
+entries (hierarchy, selection, MCP). The SceneRenderer assigns each
+entry a stable instance slot, calls `updateInstance(slot, params, m)`
+once per entry per frame, and writes the populated matrix into the
+shared mesh's instance buffer.
+
+**When to use `defineInstancedKind` vs `defineSceneNodeKind`:**
+
+| Kind                       | Use case                                    | Per draw call |
+|----------------------------|---------------------------------------------|---------------|
+| `defineSceneNodeKind`      | Heterogeneous content; unique trees / lights / cameras / per-entry shader; <~20 entries of the same shape | 1 per entry   |
+| `defineInstancedKind`      | Homogeneous content; tiles / projectiles / units / scatter decoration; ~20+ entries of the same shape | 1 per kind    |
+
+**Capacity.** `maxInstances` is pre-allocated at mount; Three's
+`InstancedMesh` doesn't grow. Pick the worst-case count your scene
+needs (the buffers cost ~64 bytes per slot). Overflow logs a one-time
+warning and the late-arriving entries stay un-rendered until earlier
+entries leave.
+
+**Slot stability.** An entry's slot index stays the same across
+frames as long as it remains in the scene. Slot 0 of a removed
+entry is reused by the next-added entry. The deterministic per-id
+slot keeps any per-instance custom buffer attributes the consumer
+maintains outside the matrix path from churning when an unrelated
+entry enters or leaves the scene.
+
+---
+
 ## Memory management
 
 **Unity:** `Resources.UnloadUnusedAssets()` + GC. Mostly hands-off.
