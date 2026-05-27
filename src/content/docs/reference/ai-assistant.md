@@ -474,8 +474,8 @@ User: "Add a balance-board extension for tuning card winrates."
 3. Wires it into `dev-shell.config.ts`.
 4. Suggests the introspection probes the extension should
    expose.
-5. User reviews + approves; runs `pnpm dev`; iterates inside the
-   assistant.
+5. User reviews + approves; opens the project in the vibesmith
+   editor and iterates inside the assistant.
 
 ### Flow D — Diagnose a bug
 
