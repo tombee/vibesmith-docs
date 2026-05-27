@@ -47,6 +47,7 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 - [Performance debugging](https://tombee.github.io/vibesmith-docs/cookbook/perf-debugging/): `gl.info`, attribution checklist, perf tools
 - [Writing a game script](https://tombee.github.io/vibesmith-docs/cookbook/writing-game-scripts/): `defineGameScript` lifecycle (mount → tick → unmount), `GameScriptContext` surface, what you can / shouldn't do inside a script
 - [Inspectable parameters (data-shape coaching)](https://tombee.github.io/vibesmith-docs/cookbook/inspectable-parameters/): declare `defineGameScript` parameters as a Zod object; one schema feeds the runtime, the inspector panel, and your AI assistant — without decorating your code
+- [Cross-kind shared state (WorldModelStore)](https://tombee.github.io/vibesmith-docs/cookbook/cross-kind-shared-state/): when sibling scene-node kinds need the same computed state every frame — `registerWorldModelStore` as the framework primitive vs a plain consumer-side store; publisher + subscribers worked example via `useSyncExternalStore`; HMR + kind-unmount lifecycle
 - [Install Vibesmith MCP into your coding assistant](https://tombee.github.io/vibesmith-docs/cookbook/install-mcp/): `vibesmith mcp install claude-code | codex | copilot` — idempotent install + diagnose + uninstall per host; auth + scope guidance; capability-tier matrix
 
 ## Anti-patterns
