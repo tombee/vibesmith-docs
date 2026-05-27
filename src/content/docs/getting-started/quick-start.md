@@ -17,13 +17,17 @@ description: Scaffold a new vibesmith project with `vibesmith init` and understa
 pnpm dlx @vibesmith/framework-cli init my-game
 cd my-game
 pnpm install
-pnpm dev
 ```
 
-You'll see a working R3F app with a rotating cube, a HUD overlay scene
-picker, and the vibesmith dev shell (Hierarchy / Inspector / Console /
-Scenarios) mounted around it in dev mode. Production builds drop the
-dev shell entirely.
+Then open the `my-game` folder in the vibesmith editor binary. The
+editor is the dev loop: it hosts the dev session, mounts the
+Hierarchy / Inspector / Console / Scenarios surfaces around your app,
+and reloads your scripts on save. You'll see a working R3F app with
+a rotating cube and a HUD overlay scene picker rendered in the
+editor's viewport.
+
+`vibesmith build` produces the shipping bundle; production builds
+drop the editor shell entirely.
 
 ## What just landed
 
@@ -37,7 +41,6 @@ Application source (`src/`, zero framework imports):
 | `src/scenes/MainScene.tsx` + `registry.ts` | Scene composer pattern. |
 | `src/state/game-store.ts` | Zustand store; one slice per concern. |
 | `src/input/use-input.ts` | Ref-based input hook (WASD + arrows + space). |
-| `src/assets/preload.ts` | `useGLTF.preload` patterns for assets. |
 
 Framework + tooling (deletable on eject):
 
@@ -52,9 +55,13 @@ Framework + tooling (deletable on eject):
 
 ## Working in the project
 
+Iteration happens in the vibesmith editor binary — open the project
+folder and edit scene JSON + source files; the editor re-bundles
+and re-mounts on save. The CLI covers everything outside the inner
+dev loop:
+
 | Command | What |
 |---|---|
-| `pnpm dev` | Vite dev server + HMR. |
 | `pnpm build` | Production bundle. |
 | `pnpm typecheck` | Strict TypeScript. |
 | `vibesmith doctor` | Read-only project health check (manifest, compat range, deps drift, conventional folders, template baseline, …). |
