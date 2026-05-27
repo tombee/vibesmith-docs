@@ -124,8 +124,27 @@ every case.
 
 `Scene`, `SceneNode`, `BuiltinSceneNode`, `CustomKindNode`,
 `MeshNode`, `DirectionalLightNode`, `PerspectiveCameraNode`,
-`HudNode`, `Transform`, `Vec3` — the full type surface for code
-that walks parsed scenes.
+`HudNode`, `HudLayerNode`, `Transform`, `Vec3` — the full type
+surface for code that walks parsed scenes.
+
+### `kind: "hud-layer"` — R3F orthographic HUD layers
+
+Built-in scene-node kind for *secondary R3F render passes* over
+the main scene — the drei `<Hud>` portal pattern lifted into the
+scene-as-data surface. A `<hud-layer>` JSON node references a
+`defineSceneHudLayer({ id, params, priority?, renderJsx })`
+registration; the SceneRenderer mounts each instance inside its
+own `<Hud renderPriority>` portal, sorted ascending by priority.
+
+Use for: an inventory card showcased at full size above the
+main scene, a minimap with its own camera, a tutorial 3D arrow
+that ignores world depth — anything 3D that needs its own
+render pass without z-fighting the main scene.
+
+Separate factory from `defineSceneHud` / `defineGlobalHud` (the
+DOM-overlay tier). See the
+[HUD lifecycle reference § R3F HUD layers](/vibesmith-docs/reference/hud-lifecycle/#r3f-hud-layers)
+for the full surface + when to reach for which tier.
 
 ## Surface (slice 2, planned)
 

@@ -21,6 +21,12 @@ Two tiers, one of which is the default:
   bars, dev / debug overlays the developer wants visible across
   scene reloads.
 
+> **`<Hud>` is the DOM-overlay tier** — the React tree mounted
+> *above* the WebGL canvas. For the in-canvas equivalent (a
+> *secondary R3F render pass* like an inventory card showcased
+> at full size or a minimap rendered with its own camera), see
+> the sibling [R3F HUD layers](#r3f-hud-layers) section below.
+
 Scene-scoped is the default because it's the cross-engine
 default: Unity puts Canvases in scenes, Godot puts CanvasLayer +
 Control nodes in scenes, Unreal binds widgets at the Level
@@ -578,6 +584,152 @@ defineGlobalHud({ id: 'splash', component: SplashOverlay });
    unaffected.
 5. **User closes project.** All scene HUDs unmount with their
    scene; `splash` (global) unmounts; HUD registries clear.
+
+---
+
+## R3F HUD layers
+
+The DOM `<Hud>` tiers above mount React DOM trees *above* the
+WebGL canvas. **R3F HUD layers are different** — they mount a
+secondary R3F render pass *inside* the WebGL surface, on top of
+the main scene, with their own camera + isolated Three scene.
+The drei `<Hud>` portal pattern with `renderPriority` is the
+underlying mechanic; the framework wraps it as a scene-as-data
+factory + JSON node so consumers don't need to escape into drei
+by hand.
+
+### When to use which
+
+| Need | Tier |
+|---|---|
+| Menus, buttons, text overlays, modals | DOM HUD (`defineSceneHud` / `defineGlobalHud`) |
+| Heads-up gauges / radars built from DOM + `WorldAnchor` | DOM HUD |
+| A 3D entity rendered at full size above the main scene (inventory card showcase, weapon-preview camera, minimap with its own camera) | R3F HUD layer (`defineSceneHudLayer`) |
+| A scene gizmo that must not z-fight world geometry | R3F HUD layer |
+| Tutorial 3D arrow that ignores world depth | R3F HUD layer |
+
+The two surfaces complement each other — a complete HUD often
+uses both (DOM for the chrome, R3F HUD layer for the in-canvas
+3D bits).
+
+### Authoring shape
+
+Two pieces — a registration in script, a JSON node in the scene:
+
+```ts
+// scripts/main.ts
+import { z } from 'zod';
+import { defineSceneHudLayer } from '@vibesmith/runtime';
+
+defineSceneHudLayer({
+  id: 'mygame/inventory-showcase',
+  priority: 2,
+  params: z.object({ itemId: z.string() }),
+  renderJsx: ({ itemId }) => (
+    <>
+      <ambientLight intensity={0.6} />
+      <InventoryCard itemId={itemId} />
+    </>
+  ),
+});
+```
+
+```json
+// scenes/town.scene.json
+{
+  "id": "town",
+  "nodes": [
+    { "kind": "prefab", "id": "town-square", "ref": "@town/square" },
+    { "kind": "hud", "id": "mygame/player-status" },
+    {
+      "kind": "hud-layer",
+      "id": "open-inventory-card",
+      "kindRef": "mygame/inventory-showcase",
+      "priority": 5,
+      "params": { "itemId": "card-7" }
+    }
+  ]
+}
+```
+
+The `id` field is the per-instance addressable id (inspector +
+selection round-trip key); `kindRef` is the registration to look
+up. Multiple JSON nodes can reference the same registration with
+distinct ids — useful for showing two showcases at once.
+
+### Render priority
+
+Each layer carries a `priority` (default `1`, matching drei's
+`<Hud>` default). The SceneRenderer sorts resolved layers
+ascending — `priority: 1` paints first, `priority: 5` paints on
+top of it. Ties fall back to scene-JSON declaration order.
+
+Per-instance `priority` on the JSON node wins over the
+registration's default — useful when one registration mounts
+twice and the two instances need different layering.
+
+### Lifecycle + inspector visibility
+
+A `kind: "hud-layer"` JSON node participates in the scene tree
+identically to any other built-in kind:
+
+- Inspector hierarchy lists it under its scene-JSON `id`.
+- Selection round-trip works through the same scene-accessor
+  channel as meshes / HUDs / custom kinds.
+- The node mounts when its owning scene loads; unmounts on
+  scene change. Scene HUD lifecycle (above) applies unchanged.
+
+A `<hud-layer>` JSON node with no matching `defineSceneHudLayer`
+registration is silently dropped from the render pass + fires
+`onHudLayerError` (default: one-time `console.warn` per id).
+
+### Schema
+
+```ts
+{
+  kind: 'hud-layer';
+  id: string;        // unique within the scene; addressable
+  kindRef: string;   // <owner>/<surface>; matches defineSceneHudLayer id
+  priority?: number; // overrides the registration's default
+  params?: unknown;  // forwarded to the registration's Zod schema
+}
+```
+
+### Factory surface
+
+```ts
+import type { ReactNode } from 'react';
+import type { z, ZodTypeAny } from 'zod';
+
+function defineSceneHudLayer<TParams>(spec: {
+  id: string;
+  params: z.ZodType<TParams, z.ZodTypeDef, any>;
+  priority?: number;
+  renderJsx: (params: TParams) => ReactNode;
+}): SceneHudLayerRegistration<TParams>;
+```
+
+Same `<owner>/<surface>` id convention as `defineSceneNodeKind`
++ HUD ids. Idempotent across re-registration with matching
+references (Vite HMR safety); throws
+`SceneHudLayerDefinitionError` on duplicate-id collision or
+invalid id format.
+
+### DOM `<Hud>` vs R3F `<hud-layer>`
+
+Confusingly close vocabulary but distinct surfaces:
+
+| | DOM `<Hud>` | R3F `<hud-layer>` |
+|---|---|---|
+| **Tier** | DOM tree above the WebGL canvas | Secondary R3F render pass inside the canvas |
+| **JSON `kind`** | `"hud"` | `"hud-layer"` |
+| **Factory** | `defineSceneHud` / `defineGlobalHud` | `defineSceneHudLayer` |
+| **What renders** | React DOM (`<div>` / etc.) | React-Three (`<mesh>` / R3F nodes) |
+| **Underlying mechanic** | DOM overlay positioned by the binary | drei `<Hud>` portal + `useFrame` priority |
+| **Use when** | Menus, gauges, modals, anything DOM | A 3D entity that needs its own camera |
+
+`HudLayer` / `defineSceneHudLayer` deliberately carries
+"Layer" in the name to disambiguate from the DOM HUD tier.
 
 ---
 
