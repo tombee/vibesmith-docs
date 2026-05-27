@@ -32,6 +32,9 @@ feels harder than it should.
 - [Performance debugging](perf-debugging.md) — measure what's
   actually slow, attribute draw-call / triangle / shader budgets,
   and where to look in `gl.info`.
+- [Batching world-space anchors](world-anchor-batching.md) — project
+  N world positions to DOM in one pass with `WorldAnchorList`
+  (hit-testing layers, E2E selectors, debug overlays).
 
 ### Animation
 
