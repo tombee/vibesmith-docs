@@ -39,6 +39,13 @@ feels harder than it should.
   cross-fading clips, and tween / spring patterns for transforms
   that don't have authored animation data.
 
+### State + data flow
+
+- [Cross-kind shared state (WorldModelStore)](cross-kind-shared-state.md) —
+  publish a computed value from one scene-node kind, subscribe
+  from many; when to use `registerWorldModelStore` vs a plain
+  consumer-side store; HMR + unmount lifecycle rules.
+
 ## Roadmap (not yet written)
 
 These slots exist because the recipes are *needed* (real R3F
