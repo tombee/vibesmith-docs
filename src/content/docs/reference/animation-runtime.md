@@ -353,6 +353,169 @@ The companion fixture test
 drives the same graph headlessly and asserts the primitive set
 composes end-to-end (deterministic replay, snapshot round-trip).
 
+## Clip events
+
+Below the graph layer, `defineAnimationClip` + `AnimationPlayer`
+exposes a pure-data clip + playback engine that the graph evaluator
+sits on. Clips may declare time-stamped event markers; the player
+fires them as a discrete `onEvent(name, timeMs)` callback once per
+crossing.
+
+```ts
+import {
+  defineAnimationClip,
+  AnimationPlayer,
+} from '@vibesmith/animation-runtime';
+
+const swing = defineAnimationClip({
+  id: 'combat/sword-swing',
+  duration: 600,
+  tracks: {
+    'sword.rotation.z': {
+      keyframes: [
+        { time: 0,   value: 0 },
+        { time: 200, value: -0.4 },
+        { time: 350, value: 1.2 },
+        { time: 600, value: 0 },
+      ],
+      easing: 'easing/in-out',
+    },
+  },
+  events: [
+    { time: 200, name: 'windup-peak' },
+    { time: 320, name: 'impact'      },
+    { time: 500, name: 'recovered'   },
+  ],
+});
+
+const player = new AnimationPlayer(swing, bindSword);
+
+player.play({
+  slotKey: 'hero',
+  onEvent: (name) => {
+    if (name === 'impact')    { applyDamage(); playSfx('hit'); }
+    if (name === 'recovered') unlockInput();
+  },
+});
+```
+
+`onEvent` can be installed three ways — `new AnimationPlayer(clip,
+bind, { onEvent })` as a per-player default, `player.play({ onEvent })`
+per playback instance, or `handle.setOnEvent(fn | undefined)` after
+play. Use the form that fits the construction order of the calling
+code.
+
+The crossing detector handles forward playback, reverse playback
+(pass `rate: -1` to `play(...)`), and `loop: true` wrap-around
+without misses or duplicates. Specifically:
+
+- **Forward** (`rate >= 0`): events fire in ascending `time` order
+  for `time ∈ [prevElapsed, currentElapsed)`; on the completing tick
+  the endpoint is inclusive so `time === duration` fires.
+- **Reverse** (`rate < 0`): events fire in descending `time` order
+  for `time ∈ (currentElapsed, prevElapsed]`; on the completing tick
+  the endpoint is inclusive so `time === 0` fires.
+- **Loop wrap**: a tick that crosses the loop boundary fires the
+  tail of the outgoing pass and the head of the incoming pass in
+  pass-order.
+- **Pause / resume**: resuming from the paused position does NOT
+  refire an event sitting at that exact `t`.
+- **Seek**: `seek(ms)` is a jump, not a traversal — events between
+  the old and new position do NOT fire. The next tick's crossing
+  interval starts at the seeked-to position. Consumers who want
+  traversal-style firing should drive time via `rate` instead.
+- **High playback rate**: large `rate` (or large frame deltas) does
+  not skip events; the player evaluates the full crossing interval
+  each tick.
+
+Event firing is deterministic — same tick sequence ⇒ same events in
+the same order, which is what makes scenario replay reproducible
+across runs.
+
+## Parallel per-entity lifecycle: `createAnimationRegistry()`
+
+`<Animator>` + `AnimationPlayer` cover *one* entity each. For scenes
+that fire many concurrent animation entries — per-projectile flights,
+per-entity death / banish sequences, per-particle long-running emitters
+— `createAnimationRegistry()` manages O(N) `AnimationPlayer` instances
+with optional per-entry phase machines.
+
+```ts
+import {
+  createAnimationRegistry,
+  defineAnimationClip,
+  defineStateMachine,
+} from '@vibesmith/animation-runtime';
+import { useAnimationRegistry } from '@vibesmith/animation-runtime/react';
+
+defineAnimationClip({
+  id: 'fx/orb-flight',
+  duration: 800,
+  tracks: {
+    'orb.position.x': { keyframes: [{ time: 0, value: 0 }, { time: 800, value: 10 }] },
+  },
+});
+
+defineStateMachine({
+  id: 'fx/orb-phases',
+  initial: 'traveling',
+  states: {
+    traveling: { transitions: [{ on: 'IMPACT', to: 'impacting' }] },
+    impacting: { transitions: [{ on: 'DONE',   to: 'fading'    }] },
+    fading:    {},
+  },
+});
+
+const registry = createAnimationRegistry();
+
+registry.dispatch('projectile-7', 'fx/orb-flight', {
+  bind: (trackKey, value) => applyToOrb('projectile-7', trackKey, value),
+  machineId: 'fx/orb-phases',
+  onPhaseChange: (evt) => console.log(evt.from, '→', evt.to),
+});
+
+// On hit:
+registry.continue('projectile-7', 'IMPACT');
+
+// On cleanup:
+registry.remove('projectile-7');
+
+// React: subscribe via useSyncExternalStore.
+function ProjectileLayer() {
+  const entries = useAnimationRegistry(registry);
+  return (
+    <>
+      {[...entries.values()].map((entry) => (
+        <ProjectileView key={entry.id} entry={entry} />
+      ))}
+    </>
+  );
+}
+```
+
+The registry composes the existing primitives — `AnimationPlayer`
+for clip playback, `StateMachineRunner` for phase tracking — and
+exposes:
+
+| Method | Purpose |
+|---|---|
+| `dispatch(id, clipId, opts)` | Start an entry. Looks up the clip, spins up an `AnimationPlayer`, optionally attaches a `StateMachineRunner`. |
+| `continue(id, event)` | Advance the entry's phase. No-op if no machine attached, or if the id is unknown (race-safe). |
+| `remove(id)` | Stop the player, stop the runner, evict the entry, notify subscribers once. |
+| `subscribe(listener)` + `getSnapshot()` | `useSyncExternalStore` contract. `useAnimationRegistry(registry)` is the one-line React wiring. |
+| `dispose()` | Tear down every live entry plus drop every subscriber. Idempotent. |
+
+Errors are typed as `AnimationRegistryError`:
+`ANIMATION_REGISTRY_DUPLICATE_ENTRY` (id already live),
+`ANIMATION_REGISTRY_UNKNOWN_CLIP` (clip not registered via
+`defineAnimationClip`), `ANIMATION_REGISTRY_UNKNOWN_MACHINE`
+(machine not registered via `defineStateMachine`).
+
+Two entries on the same clip play on independent slot keys (the entry
+id by default), so they do not stomp on each other. The phase machine
+is optional — drop `machineId` for a clip-only lifecycle and
+`continue(...)` becomes a no-op.
+
 ## What's deferred
 
 Sub-state-machines, avatar masks, and inverse-kinematics rigs
