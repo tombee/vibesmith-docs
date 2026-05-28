@@ -65,6 +65,15 @@ feels harder than it should.
   adapt its params + fixtures + snapshot contract + accessibility
   probes into idiomatic React. Data, not a UI runtime.
 
+### Player controls
+
+- [Player controllers (click-to-move, ability bar, follow
+  camera)](player-controllers.md) — retrieve a controller recipe
+  from recipe canon (`player-controller.click-to-move`,
+  `player-controller.ability-bar`, `camera.follow-third-person`),
+  adapt its params + pure reference impl + snapshot contract into
+  your game. Framework ships shape + reference; you tune feel.
+
 ## Roadmap (not yet written)
 
 These slots exist because the recipes are *needed* (real R3F
