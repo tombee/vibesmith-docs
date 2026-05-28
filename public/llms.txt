@@ -65,6 +65,7 @@ the emerging [llms.txt](https://llmstxt.org/) convention.
 - [Audio runtime](https://tombee.github.io/vibesmith-docs/reference/audio-runtime/): WebAudio wrapper, `<AudioEmitter>` on `Object3D`, fixed five-bus mixer, recipe-canon adapter, scenario capture + replay, deferred-init autoplay gate
 - [Scene construction](https://tombee.github.io/vibesmith-docs/reference/scene-construction/): Recipe → Generator → Composition pipeline
 - [Scene renderer](https://tombee.github.io/vibesmith-docs/reference/scene-renderer/): `@vibesmith/scene-renderer` substrate package — `parseScene` + `loadSceneFromUrl` (typed `SceneLoadError`) for mounting parsed `.scene.json` content in standalone browser builds without the editor binary; `<SceneRenderer scene>` planned for slice 2
+- [How to extend vibesmith](https://tombee.github.io/vibesmith-docs/reference/extending/): single canonical "I want to add X — which primitive?" answer — builtins + `defineGameScript` + `definePrefab`; `defineSceneNodeKind` is framework-internal; decision table + anti-patterns
 - [Prefab system](https://tombee.github.io/vibesmith-docs/reference/prefab-system/): content units (recipe + generator + director + AI brief + preview)
 - [Material system](https://tombee.github.io/vibesmith-docs/reference/material-system/): material roles, tier capability, shader policy
 - [Performance budgets](https://tombee.github.io/vibesmith-docs/reference/performance-budgets/): Tier 0 budget table
