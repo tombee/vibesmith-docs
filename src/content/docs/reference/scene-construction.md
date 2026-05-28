@@ -787,3 +787,45 @@ within Sonnet/Opus context limits with cache hits on the static parts
 11. Variant grid + composition viewer (when iteration density justifies)
 12. Director mode — selection + feedback UI + scene-director subagent +
     apply pipeline + diff preview (sequence after Inspector overlay)
+
+---
+
+## Scene-node-kind extension point (issue #703)
+
+A `.scene.json` is a tree of nodes. Every node carries a `kind` string
+that the SceneRenderer dispatches against — built-in `kind` values
+(`mesh`, `directional-light`, `perspective-camera`, `hud`,
+`hud-layer`) route through their strict schemas; consumer-registered
+`<owner>/<surface>` kinds route through `lookupSceneNodeKind`.
+
+Both ends of the dispatch share the **canonical four-field shape**:
+
+```jsonc
+{
+  "id": "spawn-alpha",                  // stable scene-node id
+  "kind": "my-app/spawn-point",         // registry lookup
+  "params": { "team": "alpha" },        // per-instance, Zod-validated
+  "transform": { "position": [0,0,0] }, // canonical TRS source
+  "children": []                        // recursive SceneNode[]
+}
+```
+
+`defineSceneNodeKind({ id, params, renderJsx })` is the primitive
+consumer code registers against; `definePrefab({ id, params,
+renderJsx, metadata })` is the shape consumers reach for when the
+content unit also needs the prefab-system's author-time recipe /
+generator / director / metadata bundle (see `prefab-system.md`). Both
+end up in the same registry — the SceneRenderer doesn't care which
+factory the registration came from.
+
+**Transform discipline.** The kind's `renderJsx` body is pure on
+`params` — it returns a React element tree, no transform props. The
+SceneRenderer wraps the output in a `<group>` carrying
+`node.transform`. Keeps the editor's transform gizmo / Inspector /
+scene-accessor / snapshot pipeline working uniformly across built-in
+and custom kinds (no special-casing per kind).
+
+**Editor integration.** The Add-Node menu surfaces every registered
+kind (grouped by owner segment); the Inspector renders the kind's
+Zod `params` via `leva-from-zod`. `.vibesmith/schemas/scene.schema.json`
+emits per-kind variants for IDE autocomplete.
