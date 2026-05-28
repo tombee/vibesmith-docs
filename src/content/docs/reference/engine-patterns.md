@@ -413,6 +413,20 @@ except `hud-layer` nodes, which emit the dedicated `hud-layer`
 variant. Builtin kinds are uniformly click-selectable from the
 viewport with no per-kind opt-in.
 
+**Hierarchy pick path.** The Hierarchy panel's JSON-driven tree
+rows route through the same dual-store update viewport picks use,
+so a row click and a viewport click land identical selection state.
+The `selectionBus` emit covers the scene-node-keyed half (Inspector,
+MCP query); the editor also bridges the scene-node id back to the
+live Three.js Object3D uuid (via the same `userData.vibesmith`
+payload the viewport picker uses) and updates the uuid-keyed
+selection store too, so `<SelectionOutline>`, `<TransformGizmo>`,
+and scene-accessor mutations all light up in lockstep. HUD-layer
+rows skip the uuid hop — HUDs aren't Three Object3Ds so the
+selection-outline guard short-circuits them. The dual-store update
+means clicking a row in the hierarchy and clicking the same node
+in the viewport produce the same outline + gizmo + Inspector state.
+
 ---
 
 ## Data assets
