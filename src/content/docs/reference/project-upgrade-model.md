@@ -228,6 +228,22 @@ dispatches to the right writer:
 | `--dry-run` | Print the plan without writing. |
 | `--json` | Emit the plan as JSON (for CI / assistant consumption). |
 | `--binary-version <version>` | Override the binary version for `vibesmith.toml` projects. |
+| `--refresh` (alias `--force-repack`) | Repack the bundled `.vibesmith/.cache/pkgs/<version>/` tarballs from the framework source even when the pin already satisfies the binary, then re-install. Pre-1.0 the framework's HEAD moves under a fixed `0.0.x` version, so consumers need a way to resync stale tarballs without bumping. Pairs with `--dry-run` to preview. |
+| `--no-install` | Skip the post-refresh `pnpm install` (see below). Default is to run it so the refresh is self-completing; opt out for CI / scripted upgrades. |
+
+### Self-completing refresh
+
+`--refresh` repacks the bundled `@vibesmith/*` tarballs, then runs
+`pnpm install --no-frozen-lockfile` so the upgrade leaves the
+project in a consistent state: the lockfile re-integrities against
+the new tarballs (a later `--frozen-lockfile` CI install passes) and
+`node_modules/@vibesmith/*` re-extracts (newly-shipped files land on
+disk). Without that final install the lockfile keeps the old
+integrity hashes and `node_modules` runs stale code even though the
+refresh reported success. Pass `--no-install` to batch the install
+yourself. The bundled tarballs are self-resolving — each one's
+`@vibesmith/*` deps point at sibling `file:` tarballs in the same
+cache dir, so the install needs no registry access.
 
 The commit list is capped at 25 entries; longer ranges show a
 `… and N more` hint pointing the user at `git log` in the
