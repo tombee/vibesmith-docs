@@ -529,3 +529,165 @@ your IDE's JSON-schema setting at that file:
 
 The schema regenerates every time a `defineSceneNodeKind` (or bridged
 `definePrefab`) registration appears or disappears.
+
+---
+
+## Pure-data structural templates (issue #906)
+
+The #703 bridge ran prefabs through the `defineSceneNodeKind` registry
+— functional but the wrong shape for prefabs: it conflates *behavioural
+rendering* (a React tree with hooks + R3F access) with *structural
+composition* (parameterised arrangement of builtin primitives). Issue
+#906 closes the gap with a pure-data `template` field that expands at
+scene-load + HMR into real, addressable `SceneNode`s.
+
+**The split.**
+
+| Factory                | Shape       | When                                                                            |
+| ---------------------- | ----------- | ------------------------------------------------------------------------------- |
+| `defineGameScript`     | Behaviour   | Per-frame logic, input handlers, animation drivers (issue #907).                |
+| `defineSceneNodeKind`  | Framework-internal | Custom kinds the framework ships (`hud-layer`, `mesh-instanced`, …).        |
+| `definePrefab` (`template`) | Structure   | "A deck of N stacked cards" / "a status badge" / "a hand row" — pure layout. |
+| `definePrefab` (`renderJsx`) | React-shaped (deprecated) | Legacy bridge — kept one release for back-compat, then removed.    |
+
+**Authoring a prefab.**
+
+```ts
+import { definePrefab } from '@vibesmith/runtime';
+import { z } from 'zod';
+
+definePrefab({
+  id: 'my-app/deck-stack',
+  params: z.object({
+    size: z.number().int().min(0),
+    card_back: z.string().default('image:card-backs/default'),
+    scale: z.number().default(0.5),
+    layer_height: z.number().default(0.04),
+  }),
+  template: ({ size, card_back, scale, layer_height }) => {
+    const visible = Math.min(size, 12);
+    return {
+      kind: 'group',
+      children: [
+        ...Array.from({ length: visible }, (_, i) => ({
+          kind: 'mesh',
+          transform: { position: [0, i * layer_height, 0] },
+          geometry: { kind: 'plane', size: [5 * scale, 7 * scale] },
+          material: { kind: 'standard', map: card_back },
+        })),
+        size > 0 && {
+          kind: 'text-mesh',
+          transform: { position: [0, visible * layer_height + 0.3, 0] },
+          text: String(size),
+          font_size: 3.2 * scale,
+        },
+      ].filter(Boolean),
+    };
+  },
+});
+```
+
+**Mounting from `.scene.json`.**
+
+```jsonc
+{
+  "version": 1,
+  "name": "main",
+  "nodes": [
+    {
+      "id": "p0-deck",
+      "prefab": "my-app/deck-stack",
+      "params": { "size": 37 },
+      "transform": { "position": [-16, 0.05, 12] }
+    }
+  ]
+}
+```
+
+At scene-load, `expandScenePrefabs` (in `@vibesmith/scene-renderer`)
+runs once and replaces every `{ id, prefab, params?, transform?,
+children? }` reference with the prefab's `template(params)` SceneNode
+sub-tree. Downstream code — the SceneRenderer's `<Node>` walker, the
+hierarchy panel, the selection bus, the MCP scene-tree resource —
+sees a regular scene with no `prefab` variants left.
+
+**Deterministic id derivation.** Each expanded node gets a stable id
+derived from the consumer-side reference id + the template's tree
+position:
+
+- Root: `<consumer-id>` verbatim. The deck-stack reference above
+  produces a root with `id: "p0-deck"`.
+- Template node with explicit `id`: `<parent-id>/<id>`. Use this for
+  nodes the consumer wants to address by a stable name regardless of
+  sibling churn (e.g. `{ id: 'count', kind: 'text-mesh' }` →
+  `p0-deck/count`).
+- Sole same-kind sibling: `<parent-id>/<kind>`. The deck-stack's text
+  badge is the only `text-mesh` at its depth, so it becomes
+  `p0-deck/text-mesh`.
+- N > 1 same-kind siblings: `<parent-id>/<kind>-<index>` where index
+  is the 0-based position among same-kind siblings (declaration
+  order). The 12 visible cards become `p0-deck/mesh-0`,
+  `p0-deck/mesh-1`, …, `p0-deck/mesh-11`.
+
+`<owner>/<surface>` kind ids have their internal slash sanitized to
+`-` in the path segment (`acme/spawn-point` → `acme-spawn-point`) so
+id paths stay flat.
+
+Same template + same params → same id tree, every time. Selection +
+snapshot determinism + MCP addressing all key on this.
+
+**Cycle detection.** Templates can reference other prefabs (a
+`hand-fan` template might recurse into `card` templates). The
+expansion walks with a cycle-stack; a prefab whose template references
+itself (directly or transitively) throws `PrefabExpansionError({ code:
+'PREFAB_CYCLE', cyclePath })` with the chain that led to the cycle.
+
+**Conditional emission.** A `template` body that returns `null` at the
+top level contributes no nodes to the scene (handy for `visible: false`
+opt-outs). Conditional child nodes go through `Array.filter(Boolean)`
+on the children list — `false`/`null` entries vanish before expansion.
+
+**HMR.** When a prefab's `template` re-registers (a project script
+hot-reloads), the SceneRenderer's `useExpandedScene` hook re-runs the
+expansion pass against the fresh template — no full scene remount.
+The pure-data shape makes this cheap: no React re-mount, no R3F tree
+churn, just a new SceneNode tree the renderer reconciles against the
+previous one.
+
+**Transform composition.** A consumer-side `transform` on the
+prefab-reference node replaces the template root's transform — the
+consumer controls where the expansion sits in world space, not the
+template. Descendant transforms come from the template verbatim.
+
+**Consumer-side `children`.** A `prefab` reference can carry its own
+`children` array; the entries get appended to the expanded root's
+children. This lets a consumer extend a prefab instance with extra
+scene-nodes (a sticker, a debug label) without modifying the prefab.
+
+**Error surface.** `expandScenePrefabs` throws
+`PrefabExpansionError` with a machine-readable `code` field:
+
+| `code`                              | When                                                                                       |
+| ----------------------------------- | ------------------------------------------------------------------------------------------ |
+| `PREFAB_NOT_FOUND`                  | Scene references a `prefab` id that isn't registered.                                       |
+| `PREFAB_PARAMS_INVALID`             | Scene-JSON `params` failed Zod validation against the prefab's schema.                       |
+| `PREFAB_CYCLE`                      | Template references itself (directly or transitively). `cyclePath` carries the chain.        |
+| `PREFAB_NO_TEMPLATE`                | Scene references a prefab that declared only `renderJsx` (legacy bridge), not `template`.    |
+| `PREFAB_TEMPLATE_RETURNED_INVALID`  | Template body threw or returned a malformed `PrefabTemplateNode`.                            |
+
+Editor + standalone hosts catch these on the scene-load boundary +
+surface them through the same `onLoadError` channel the existing
+custom-kind dispatch uses.
+
+**When to use `template` vs. `kind`.**
+
+- **`template` (prefab):** the node is a *pure rearrangement* of
+  builtin primitives or other prefabs. No hooks, no state, no
+  per-frame logic. Decks, badges, status clusters, hand rows.
+- **`kind` (custom kind via `defineSceneNodeKind`, framework-only
+  after issue #907):** the node carries behaviour the framework
+  ships — instanced batches, hud-layer portals, the future
+  animation drivers. Consumer code reaches for `template` first;
+  if the node needs per-frame work, that's a `defineGameScript`
+  attached to a builtin mesh inside the template, not a custom
+  kind.

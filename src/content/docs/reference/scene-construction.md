@@ -831,6 +831,19 @@ kind (grouped by owner segment); the Inspector renders the kind's
 Zod `params` via `leva-from-zod`. `.vibesmith/schemas/scene.schema.json`
 emits per-kind variants for IDE autocomplete.
 
+**Pure-data prefab references (issue #906).** Scene JSON also accepts
+`{ id, prefab, params?, transform?, children? }` as a node variant
+alongside builtin/custom kinds. At scene-load + HMR,
+`expandScenePrefabs` (in `@vibesmith/scene-renderer`) replaces the
+reference with the registered prefab's `template(params)` SceneNode
+sub-tree — deterministic ids, downstream code never sees the
+`prefab` variant. See `prefab-system.md` § "Pure-data structural
+templates" for the full template authoring + id-derivation contract.
+This is the canonical surface for game-specific compositional patterns
+(decks, hand rows, status badge clusters). `defineSceneNodeKind`
+stays framework-internal for kinds that ship behaviour the framework
+owns (`hud-layer`, `mesh-instanced`).
+
 ## Built-in node vocabulary (issue #905)
 
 The built-in `kind` set is sized to cover the common scene-as-data
