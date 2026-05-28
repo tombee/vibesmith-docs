@@ -190,14 +190,21 @@ with bounce, destructible scenery.
 
 **Web:** raw `pointerdown` / `keydown` / Gamepad API.
 
-**What we own:**
-- **`InputActions` map** — named actions ("move", "interact", "openInventory")
-  bound to keys / mouse / gamepad. JSON-defined, runtime-overridable for
-  rebinding. ~150 lines including gamepad polling. Lives in
-  `packages/shared/input/`.
-- Hooks: `useAction('interact', () => ...)`, `useAxis('move')`.
+**What we own:** the **`@vibesmith/input` substrate**.
+`defineInputMap({ id, actions, bindings })` declares named actions
+("move", "interact", "openInventory") with digital + analog-axis kinds
+and a first-class WASD→Vec2 composite binding. Keyboard, mouse, Gamepad
+API (polled in the input frame phase at priority −100), and touch
+(opt-in virtual stick / buttons) all fan into the same actions. Hooks
+`useAction` / `useActionState` / `useAxis`; script-context `ctx.input`
++ the `onInput(ctx, action, value)` hook. Runtime-overridable bindings
+persist user-scoped with chord-conflict detection; input-context
+push/pop stacking (Unreal Mapping Contexts / Godot action sets);
+recorded-input deterministic replay. Raw `pointerdown` / `keydown` /
+Gamepad API access stays available — the substrate sits beside web
+events, never forbids them.
 
-**Status:** own (small).
+**Status:** shipped — [input](/reference/input/).
 
 ---
 
@@ -511,8 +518,16 @@ scenes.
 - No lightmap baking (skipping the Unity equivalent — matte materials +
   unlit-ish materials are fine without precomputed GI)
 
-**Status:** built-in + drei. ~50 lines of setup in a `<SceneLighting>`
-component shared across scenes; per-scene overrides via props.
+**Status:** built-in + drei, with the **lighting substrate**
+([lighting](lighting/)) on top: six light scene-node-kinds
+(`vibesmith/directional-light` / `point` / `spot` / `ambient` /
+`hemisphere` / `area`) so lights are scene data the editor + AI author;
+a `LightingTierPolicy` mapping the rendering tier to shadow-map res /
+cascades / max casters / IBL fidelity; a `LightingArtifact`
+(key/fill/rim + ambient/IBL + fog + exposure) + `<LightingEnvironment>`
+apply node; `authorLighting(prompt)` mood authoring; and 6 lighting
+recipe rigs. The light components stay idiomatic Three — the substrate
+adds intelligence around them, never a `<Light>` wrapper.
 
 ---
 
@@ -766,18 +781,30 @@ Build infra structure first, populate when external playtest matters.
 **Unity:** PlayerPrefs, file I/O, scripted serialization.
 
 **Our setup:**
-- **Authoritative state is server-side.** Postgres is the cloud save.
-  No client-side save files for player progress.
-- **Client-local state** — settings, keybinds, recently-cached
-  composition snapshots, draft chat messages — lives in IndexedDB via
-  `idb-keyval`. Survives reloads, doesn't sync across devices unless
-  the server replicates it.
-- **Anonymous → authed transition** — client may start a session
-  unauthed (browse around, play tutorial); on login, local progress
-  migrates to server.
+- **Offline / single-player: a real client-side save system.** The
+  framework ships `@vibesmith/save` — player-facing, schema-versioned,
+  migration-safe save slots (named + autosave), atomic writes, backed
+  by IndexedDB (browser) or the filesystem (desktop). This is the
+  engine-equivalent of `PlayerPrefs` / `USaveGame` / `bevy_save`. See
+  [Save system](/reference/save-system/). An offline game uses this; it
+  does not need a server.
+- **Online: server-authoritative.** When a consumer runs a server, the
+  database is the cloud save and the client holds no canonical state.
+  Complementary to client-side saves, not a replacement — an online
+  consumer can sync local saves to the server on login.
+- **Saves are not dev snapshots.** `@vibesmith/save` is player-facing
+  and versioned; snapshots are a dev-iteration tool with no migration
+  story. Different audiences, different storage. See
+  [Save system](/reference/save-system/) § "Saves are not snapshots".
+- **Client-local prefs** — settings, keybinds — are a *third*, distinct
+  concern: user-level config, not a save slot. They live in IndexedDB
+  and don't sync by default.
+- **Anonymous → authed transition** — a client may start a session
+  unauthed (browse around, play tutorial); on login, an online consumer
+  migrates local save state to the server.
 
-**Status:** server-side (Drizzle + Postgres handles it); ~50 lines of
-IndexedDB wrappers for client-local prefs.
+**Status:** client-side save substrate shipped (`@vibesmith/save`);
+server-side persistence is consumer-scope.
 
 ---
 
