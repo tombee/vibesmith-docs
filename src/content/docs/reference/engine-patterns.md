@@ -350,6 +350,45 @@ GUI; outputs JSON sequences.
 
 **Status:** library × 3, dev-only.
 
+### Selection bus + universal `Selection` shape
+
+The editor's selection state lives behind a single module-level bus
+(`selectionBus`, exported from `@vibesmith/editor`). Every surface
+that owns a selectable thing publishes via the bus on click /
+keyboard select; every subscriber (Inspector, MCP query, debug
+panels) reads via the bus. There is no parallel zustand store, no
+per-surface selection prop drilling.
+
+The `Selection` type is a discriminated union keyed on `kind`. Each
+variant carries the stable canonical id(s) of its target — author-
+declared registration ids or scene-JSON node ids, never React keys
+or Three.js uuids. Currently:
+
+| `kind`            | Payload fields                           | Owning surface                     |
+| ----------------- | ---------------------------------------- | ---------------------------------- |
+| `scene-node`      | `sceneNodeId`, `scenePath?`              | Hierarchy panel (non-hud-layer)    |
+| `hud`             | `hudId`                                  | HUD inspector                      |
+| `hud-layer`       | `layerId`, `kindRef`, `scenePath?`       | Hierarchy panel (`defineSceneHudLayer`) |
+| `animator`        | `animatorId`, `clipId?`                  | Animation clip editor              |
+| `state-machine`   | `stateMachineId`, `stateId?`             | FSM inspector                      |
+| `vfx-recipe`      | `recipeId`                               | VFX preview panel                  |
+| `vfx-emitter`     | `particlesId`, `emitterId`               | VFX workbench                      |
+| `shader-node`     | `graphId`, `nodeId`                      | TSL graph editor                   |
+| `shader-uniform`  | `shaderId`, `uniformName`                | TSL uniform rack                   |
+| `theme-token`     | `themeId`, `token`                       | Theme inspector                    |
+| `animation-track` | `clipId`, `trackName`                    | Animation clip editor              |
+| `none`            | —                                        | Cleared sentinel                   |
+
+Subscribers narrow with a `switch` on `kind` or the
+`useSelection('kind')` hook overload. Adding a new variant is
+strictly additive — existing subscribers fall through unknown
+kinds via the discriminated-union default branch and keep working.
+
+`selectionBus.set(target)` is idempotent — re-selecting a
+structurally identical target does not re-fire events. `clear()`
+emits `selection.cleared` only on transition from a non-`none`
+selection.
+
 ---
 
 ## Data assets
