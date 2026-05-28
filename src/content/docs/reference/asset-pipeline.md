@@ -141,6 +141,41 @@ Most specific wins:
 After resolution, `bake-max-bytes` flips bake → stream when the
 emitted bytes exceed the cap.
 
+## Editor — auto-population
+
+Open a project in the editor and the Assets panel populates
+immediately. You don't run a CLI subcommand; you don't restart
+the editor; you don't import the asset. This is the default-
+behaviour benchmark established native editors set.
+
+How it works:
+
+- **On project open** — the editor walks `<project>/assets/`,
+  derives an address per file from the path
+  (`assets/<kind-folder>/<ref>[.ext]`), reads any per-file
+  `<file>.meta.json` sidecar for `address` /
+  `data.schema` / `data.address-prefix` overrides, and registers
+  the resulting `vibesmith/asset-registry` provider. The Assets
+  panel + every `loadAsset(...)` call in the consumer's code see
+  the populated registry.
+- **On change** — adding / removing / renaming files (or editing
+  their sidecars) under `assets/` re-walks the tree and updates
+  the registry live. The Assets panel re-renders without a manual
+  refresh.
+- **On close** — the editor clears the registry + releases the
+  blob URLs it minted.
+
+The walker is the editor-side equivalent of
+`@vibesmith/vite-plugin-assets`. Same address rules; same sidecar
+overrides. The standalone Vite path remains the primary surface
+for `vibesmith build`; the editor uses its in-process walker to
+avoid the dependency on a running Vite dev server.
+
+The editor walker doesn't transcode, hash content, or apply
+delivery-mode optimisation — those are build-time concerns the
+production pipeline handles. For dev-loop iteration, raw bytes
+plus a Blob URL is enough.
+
 ## Runtime — `loadAsset(address)`
 
 Consumer + framework code reaches for assets by address, not
