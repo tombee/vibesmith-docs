@@ -445,3 +445,87 @@ subagent enforces.
 - `subagent-roster.md` — per-prefab-type director agents
 - `material-system.md` — material roles named in prefab recipes;
   framework resolves to tier-appropriate concrete materials
+
+---
+
+## Top-level-mountable prefabs (issue #703)
+
+`definePrefab({ id: "<owner>/<surface>", … })` is now a first-class
+**scene-node-kind**. When the prefab's `id` matches the
+`<owner>/<surface>` convention, `definePrefab` transparently
+bridges into the `defineSceneNodeKind` registry, so scenes can mount
+the prefab directly via the four-field shape:
+
+```jsonc
+// my-app/town.scene.json
+{
+  "version": 1,
+  "name": "town",
+  "nodes": [
+    {
+      "id": "main-house",
+      "kind": "my-app/cottage",
+      "params": { "stories": 2 },
+      "transform": { "position": [10, 0, -5] }
+    }
+  ]
+}
+```
+
+`defineSceneNodeKind` and the bridged `definePrefab` are the same
+extension point — `defineSceneNodeKind` for engine-shaped reusable
+content the framework or a consumer ships directly; `definePrefab`
+for the same shape *plus* the author-time recipe / generator /
+director / metadata bundle this doc enumerates above. Both end up in
+the same scene-node-kind registry that the SceneRenderer dispatches
+against.
+
+**Bare-id prefabs (back-compat).** Existing `definePrefab({ id:
+"cottage" })` calls keep working — the bridge skips registrations
+whose id doesn't match the convention. Rename to
+`<owner>/<surface>` to opt in. The doctor surface flags bare-id
+prefabs as upgrade candidates.
+
+**Canonical four-field shape.** Every custom kind a `.scene.json`
+references conforms to:
+
+- `id` — stable scene-node id (selection, hierarchy, MCP, snapshot all
+  key on this; distinct from `kind`).
+- `kind` — registry lookup against `defineSceneNodeKind` (or bridged
+  `definePrefab`).
+- `params` — per-instance parameter bag, Zod-validated at mount time
+  against the registered kind's schema (defaults flow from
+  `z.default()`).
+- `transform` — canonical position / rotation / scale. The
+  SceneRenderer wraps the kind's `renderJsx` output in a `<group>`
+  with the transform; **the kind's `renderJsx` body never sees the
+  transform as a prop** — keeps the editor's transform gizmo /
+  Inspector / scene-accessor pipeline working uniformly across
+  built-in and custom kinds.
+- `children` — recursive `SceneNode[]`. Mounts as children of the
+  transform-wrapping group, so parent transforms compound naturally.
+
+**Editor integration.** The Add-Node menu lists every registered
+scene-node-kind (consumer-shaped, grouped by owner segment) alongside
+the built-in primitives; clicking adds the node to the active
+`.scene.json` with the kind's Zod defaults. The Inspector renders
+the kind's Zod `params` schema via `leva-from-zod` so per-instance
+parameters are editable from the same surface that handles built-in
+mesh / light / camera / script-parameter rows.
+
+**IDE autocomplete.** The vibesmith-app emits
+`.vibesmith/schemas/scene.schema.json` on every project-script load
++ hot-reload, with per-kind variants in the `SceneNode` union. Point
+your IDE's JSON-schema setting at that file:
+
+```jsonc
+// .vscode/settings.json
+{
+  "json.schemas": [
+    { "fileMatch": ["**/*.scene.json"], "url": "./.vibesmith/schemas/scene.schema.json" }
+  ]
+}
+```
+
+The schema regenerates every time a `defineSceneNodeKind` (or bridged
+`definePrefab`) registration appears or disappears.
