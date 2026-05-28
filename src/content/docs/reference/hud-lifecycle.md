@@ -138,6 +138,64 @@ alias is removed in the release after. See [Migration](#migration).
 
 ---
 
+## Hosting global HUDs — `<RegistryHudHost />`
+
+`defineGlobalHud(...)` only *registers* a HUD. A registration
+renders because *something* reads the registry and mounts each
+entry. `@vibesmith/runtime` ships that reader as
+`<RegistryHudHost />` — the host you mount once in your `App.tsx`:
+
+```tsx
+import { Canvas } from '@react-three/fiber';
+import { RegistryHudHost } from '@vibesmith/runtime';
+import { World } from './world/World';
+
+export function App() {
+  return (
+    <>
+      <Canvas><World /></Canvas>
+      <RegistryHudHost />
+    </>
+  );
+}
+```
+
+The scaffolded `App.tsx` includes it by default — a new project
+renders its global HUDs out of the box. Without it, a
+`defineGlobalHud` call registers but never renders in a shipped
+build, unless you hand-mount the component yourself.
+
+`<RegistryHudHost />` is the *same* component the editor viewport
+mounts, so a global HUD renders identically while you iterate in
+the editor and in the shipped `vibesmith build` bundle — one code
+path, no editor-vs-build drift.
+
+It honours each HUD's `chromeAware` declaration, wraps every HUD
+in its own `<Suspense>` boundary (so Suspense-shaped asset hooks
+like `useImageAsset` work without your own inner boundary), and
+re-renders when HUDs register after first paint (HMR, lazy module
+load).
+
+### Props
+
+```ts
+function RegistryHudHost(props?: {
+  hooks?: HudHooks;              // framework-injected; leave unset
+  style?: CSSProperties | false; // overlay container style; `false` = bare fragment
+}): ReactNode;
+```
+
+`style` defaults to an absolute-positioned, `pointer-events: none`
+overlay at `z-index: 10`. Pass a `CSSProperties` object to merge
+over that default, or `false` to render the HUDs as a bare fragment
+with no wrapping container.
+
+`<RegistryHudHost />` renders the *global* tier only. Scene-scoped
+HUDs (`defineSceneHud`) mount against the active scene's `<Hud>`
+nodes via the editor's scene-HUD host.
+
+---
+
 ## Mount semantics
 
 | Lifecycle event | Scene HUDs | Global HUDs |
