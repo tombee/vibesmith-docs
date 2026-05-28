@@ -245,6 +245,31 @@ class Pool<T> {
 
 ---
 
+## Scene flow (active-scene + transitions)
+
+**Unity:** `SceneManager.LoadSceneAsync` — single (swap) or additive.
+
+**Three:** no built-in. A scene is a parsed `.scene.json`; swapping the
+active one, layering an additive one, and stacking a modal one is
+substrate the framework owns.
+
+**What we own:** the **scene-flow manager** — `SceneFlowManager` in
+`@vibesmith/scene-renderer` (composes `loadSceneFromUrl`) + the
+`ctx.scene` handle (`transitionTo` / `push` / `pop` / `loadAdditive` /
+`unloadAdditive`) on `defineGameScript`. Covers the active-scene swap
+through a four-phase lifecycle (`unloading → loading → entering →
+active`) with a fade-default transition effect, the `onSceneEnter` /
+`onSceneExit` script hooks, the modal scene stack, typed scene→scene
+payload handoff, and scenario-deterministic capture/replay. An
+assistant can drive it via MCP Tier-2 tools
+(`vibesmith.scene.transition-to` / `.list` / `.stack`), the
+`vibesmith://scene/flow` Resource, and the cmd+P `scene.go-to` action.
+See [Scene flow](./scene-flow/).
+
+**Status:** built-in (substrate).
+
+---
+
 ## Zone streaming (additive scenes)
 
 **Unity:** `SceneManager.LoadSceneAsync` additive.
@@ -253,13 +278,18 @@ class Pool<T> {
 via `useGLTF`; mount/unmount via React conditionals.
 
 **What we own:**
-- **`ZoneManager`** — tracks player position, computes nearby zone keys,
-  triggers loads on entry-edge and unloads on exit-edge with hysteresis.
-  Async via Suspense boundaries per zone.
+- **Additive scene loads** — `ctx.scene.loadAdditive(ref)` /
+  `unloadAdditive(handle)` layer a parsed `.scene.json` over the active
+  scene, addressed by handle.
+- **`ZoneManager`** (consumer-side) — tracks player position, computes
+  nearby zone keys, and drives `loadAdditive` / `unloadAdditive` on
+  entry/exit edges with hysteresis. Async via Suspense boundaries per
+  zone.
 - Asset cache strategy: rely on `useGLTF.preload` + browser HTTP cache
   for v0. Custom IndexedDB asset cache if quota becomes the bottleneck.
 
-**Status:** own (medium — ~300 lines including hysteresis + cache).
+**Status:** additive load/unload built-in; the position-driven
+`ZoneManager` hysteresis layer is consumer-side (~300 lines).
 
 ---
 
