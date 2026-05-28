@@ -48,10 +48,24 @@ Framework + tooling (deletable on eject):
 |---|---|
 | `.vibesmith/config.ts` | Framework pin + project config. |
 | `.vibesmith/manifest.json` | Installed vibesmith extensions. |
-| `.mcp.json` | MCP server registry (auto-discovered by Cursor / Claude Code / Codex CLI). |
+| `.mcp.json` | MCP server registry (auto-discovered by Cursor / Claude Code / Codex CLI). Points at the editor binary's bundled MCP sidecar (no project-local install needed). |
 | `AGENTS.md` | Tool-agnostic agent instructions + reading list. |
 | `agents/` | Project-specific agent prompts. |
 | `vibesmith eject` (CLI) | One-way removal of vibesmith — dry-run by default; `--apply` to mutate. |
+
+The scaffolded `package.json` pulls only the runtime + build-tool
+tier framework packages — game runtime libraries the project's
+import statements actually reach (`@vibesmith/runtime`,
+`@vibesmith/content-schemas`) plus the Vite plugins and lint config
+the project's `vite.config.ts` / `biome.json` import. The editor
+itself (`@vibesmith/editor`, `@vibesmith/standard-extensions`,
+`@vibesmith/mcp-server`, the AI provider family) lives inside the
+vibesmith editor binary — installed once per machine, not per
+project. Same model as Unity / Godot / Unreal.
+
+`vibesmith doctor` enforces this — the `audience-tier` row in the
+health report fails if any editor-tier package leaks into the
+project's `node_modules`.
 
 ## Working in the project
 
