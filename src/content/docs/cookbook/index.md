@@ -49,6 +49,14 @@ feels harder than it should.
   from many; when to use `registerWorldModelStore` vs a plain
   consumer-side store; HMR + unmount lifecycle rules.
 
+### Authoring scene content
+
+- [Scene-node-kind authoring rules](scene-node-kind-authoring.md) —
+  five rules every `defineSceneNodeKind` / `defineInstancedKind`
+  registration must follow (one responsibility, pure
+  `renderJsx`, children as scene-nodes, scene tree IS the state,
+  no DOM). `vibesmith doctor` enforces the mechanical ones.
+
 ## Roadmap (not yet written)
 
 These slots exist because the recipes are *needed* (real R3F
