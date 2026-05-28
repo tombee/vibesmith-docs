@@ -57,6 +57,14 @@ feels harder than it should.
   `renderJsx`, children as scene-nodes, scene tree IS the state,
   no DOM). `vibesmith doctor` enforces the mechanical ones.
 
+### Player-facing UI
+
+- [UI recipes (inventory, dialogue, card grid)](ui-recipes.md) —
+  retrieve a game-agnostic UI recipe from recipe canon
+  (`ui.inventory.grid`, `ui.dialogue.tree`, `ui.layout.card-grid`),
+  adapt its params + fixtures + snapshot contract + accessibility
+  probes into idiomatic React. Data, not a UI runtime.
+
 ## Roadmap (not yet written)
 
 These slots exist because the recipes are *needed* (real R3F
