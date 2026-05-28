@@ -402,6 +402,17 @@ structurally identical target does not re-fire events. `clear()`
 emits `selection.cleared` only on transition from a non-`none`
 selection.
 
+**Viewport pick path.** Click-pick from the 3D viewport is wired
+the same way for every builtin kind: the scene-renderer attaches
+`userData.vibesmith = { sceneNodeId, kind, kindRef? }` to every
+dispatched node's wrap (mesh, group, light, text-mesh, hud-layer,
+custom-kind, instanced-kind expansion). The editor walks the
+raycast hit's ancestor chain to find the nearest tagged wrap and
+emits the right `Selection` variant — `scene-node` for everything
+except `hud-layer` nodes, which emit the dedicated `hud-layer`
+variant. Builtin kinds are uniformly click-selectable from the
+viewport with no per-kind opt-in.
+
 ---
 
 ## Data assets
