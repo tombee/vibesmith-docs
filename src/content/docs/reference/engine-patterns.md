@@ -52,6 +52,19 @@ function Settlement({ recipe }: { recipe: SettlementRecipe }) {
 The recipe→composer pattern from MyProject ports near-verbatim. The
 *data layer* changes (Zod-typed JSON instead of ScriptableObject).
 
+**Built-in scene-node vocabulary (issue #905).** The substrate's
+strict-schema kinds cover the common pure-data primitives so consumers
+don't need a custom `defineSceneNodeKind` registration just to mount a
+textured plane / lit light / empty anchor / label: `mesh` (with
+`plane | box | sphere | circle | cylinder` geometry and the
+expanded-PBR `material: { kind: 'standard', map, roughness, metalness,
+emissive, emissive_intensity, side, cast_shadow, receive_shadow }`),
+`directional-light` (with `color` + `cast_shadow` + `shadow_map_size`),
+`ambient-light`, `perspective-camera`, `group` (empty transform anchor
+with recursive `children`), `text-mesh` (drei `<Text>`), `hud`,
+`hud-layer`. See `scene-construction.md` § *Built-in node vocabulary*
+for the full field surface.
+
 **Status:** built-in.
 
 ---
