@@ -36,6 +36,17 @@ hand:
   failures the user hasn't pasted yet (HUD warnings, parse errors,
   context-lost). Returns `{ ts, level, source, message }[]` with
   ANSI / source-map noise stripped.
+- **Agent attention routing.**
+  `mcp__vibesmith__focus_panel({ panel_id, flash? })` — bring a
+  non-viewport editor panel to the front and optionally flash-
+  highlight its border for ~600ms. When the agent changes
+  something in a panel (registers an asset, drops a snapshot,
+  drives a fixture transition), this directs the user's eye to
+  the affected surface. The non-viewport sibling of
+  `set_active_scene` / `viewport_screenshot` — those answer
+  *what should the viewport show?*; this answers *what should the
+  user look at?* On unknown panel id, the response carries the
+  registered-id list so the agent self-corrects on the next call.
 
 **Tier 2 — deferred catalog.** Name + one-line description +
 scenario tags only until `tools_find` resolves the JSONSchema.
