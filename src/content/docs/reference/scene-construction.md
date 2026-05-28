@@ -794,9 +794,10 @@ within Sonnet/Opus context limits with cache hits on the static parts
 
 A `.scene.json` is a tree of nodes. Every node carries a `kind` string
 that the SceneRenderer dispatches against — built-in `kind` values
-(`mesh`, `directional-light`, `perspective-camera`, `hud`,
-`hud-layer`) route through their strict schemas; consumer-registered
-`<owner>/<surface>` kinds route through `lookupSceneNodeKind`.
+(`mesh`, `directional-light`, `ambient-light`, `perspective-camera`,
+`hud`, `hud-layer`, `group`, `text-mesh`) route through their strict
+schemas; consumer-registered `<owner>/<surface>` kinds route through
+`lookupSceneNodeKind`.
 
 Both ends of the dispatch share the **canonical four-field shape**:
 
@@ -829,3 +830,53 @@ and custom kinds (no special-casing per kind).
 kind (grouped by owner segment); the Inspector renders the kind's
 Zod `params` via `leva-from-zod`. `.vibesmith/schemas/scene.schema.json`
 emits per-kind variants for IDE autocomplete.
+
+## Built-in node vocabulary (issue #905)
+
+The built-in `kind` set is sized to cover the common scene-as-data
+primitives without forcing a custom `defineSceneNodeKind` registration
+for textured planes / lit lights / empty anchors / labels:
+
+| Kind                  | Purpose                                       | Notable fields |
+|-----------------------|-----------------------------------------------|----------------|
+| `mesh`                | Static / scripted mesh                        | `geometry`, `material`, `transform`, `script?`, `scriptParameters?`, `scriptEnabled?` |
+| `directional-light`   | Directional + shadow-caster                   | `intensity?`, `color?`, `cast_shadow?`, `shadow_map_size?` |
+| `ambient-light`       | Scene-wide fill                               | `intensity?`, `color?` |
+| `perspective-camera`  | Default camera the Canvas binds to            | `look_at?`, `fov?` |
+| `group`               | Empty transform anchor with `children`        | `transform?`, `children?` |
+| `text-mesh`           | drei `<Text>` SDF mesh                        | `text`, `font_size?`, `color?`, `outline_color?`, `outline_width?`, `anchor?` |
+| `hud`                 | DOM HUD-overlay registration target           | id only (the DOM component lives behind `defineSceneHud`) |
+| `hud-layer`           | R3F-orthographic HUD-layer registration       | `kindRef`, `priority?`, `params?` |
+
+### Geometry (under `mesh.geometry.kind`)
+
+`plane | box | sphere | circle | cylinder` (additive — pre-existing
+`{ kind: 'plane' | 'box' }` files continue to parse). Each geometry
+exposes a snake-case parameter set sized to the corresponding Three
+constructor — `radius`, `width_segments` / `height_segments` (sphere),
+`segments` (circle), `radius_top` / `radius_bottom` / `height` /
+`radial_segments` (cylinder).
+
+### Standard material (`material.kind === 'standard'`)
+
+Every field is optional so legacy `{ kind: 'standard', color: '#fff' }`
+files continue to parse; new fields layer on additively:
+
+- `color`, `roughness`, `metalness` — direct PBR controls.
+- `map` — **asset address** (e.g. `image:cards/foo`). Resolves through
+  the runtime asset registry at mount time using the same
+  `useImageAsset` path `useAssetTexture` walks; the substrate renderer
+  wraps it in a `<Suspense>` so the silhouette draws while the texture
+  loads.
+- `emissive`, `emissive_intensity` — glow term.
+- `side` — `'front' | 'back' | 'double'`.
+- `cast_shadow`, `receive_shadow` — per-mesh shadow toggles (default
+  `true`).
+
+### When to reach for `defineSceneNodeKind` instead
+
+If the content unit needs runtime behaviour (physics, networking,
+custom hooks, scripted ticking beyond `script:` on a mesh), or if the
+shape doesn't fit the built-in vocabulary above, register a custom
+kind. Built-ins cover *pure scene-data primitives*; everything else
+belongs in the registry.
