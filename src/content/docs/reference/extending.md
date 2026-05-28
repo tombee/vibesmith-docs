@@ -388,9 +388,22 @@ see [scene-construction](/reference/scene-construction/).)
 
 It isn't there. The factory lives on `@vibesmith/runtime/internal`
 for framework-internal use only (adding new builtins, never
-consumer-facing). `vibesmith doctor`'s
-`scene-node-kind-consumer-import` check catches legacy imports
-that haven't migrated.
+consumer-facing). Two surfaces catch a legacy import that hasn't
+migrated:
+
+- `vibesmith doctor`'s `scene-node-kind-consumer-import` check warns
+  on the import at `vibesmith check`.
+- The editor's project-script bundler fails the bundle with an
+  actionable message — `defineSceneNodeKind is framework-internal …
+  (see extending § Anti-patterns)` — so the migration path is clear
+  at editor-open time rather than an opaque "No matching export"
+  error.
+
+This is a **hard rename, not a deprecation** — there is *no*
+one-release re-export shim. Re-adding the symbol to the public
+surface (even temporarily) would reopen the discoverability problem
+the rename closed. The fix is always to migrate to one of the three
+primitives.
 
 ```ts
 // DON'T
