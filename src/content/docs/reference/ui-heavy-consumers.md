@@ -261,6 +261,18 @@ adapts to the consumer's tokens + slot taxonomy + animator
 hooks, and the framework runs the validation probes against the
 adapted instance.
 
+**Shipped starter set.** `@vibesmith/recipe-canon` adds a
+`kind: 'ui'` recipe variant + a game-agnostic starter set:
+`ui.inventory.grid`, `ui.dialogue.tree`, `ui.layout.card-grid`.
+A UI recipe is **data, not React** — it carries `params`
+(game-agnostic knobs), `fixtures` (named example states),
+`probes` (machine-checkable accessibility + layout
+expectations), a `snapshot` contract (capture keys + default
+replay state), and a `referenceImpl` *pointer* you adapt into
+idiomatic React. See the
+[UI recipes cookbook](../cookbook/ui-recipes.md) for the
+retrieve → adapt → validate worked example.
+
 ## Preview extension
 
 Sibling of the `tsl-preview` + `vfx-preview` standard extensions.
