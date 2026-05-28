@@ -29,6 +29,28 @@ editor's viewport.
 `vibesmith build` produces the shipping bundle; production builds
 drop the editor shell entirely.
 
+### Opening a project from the command line
+
+The editor also accepts a project path as a launch argument, so
+agents and scripts can dispatch the editor without a manual click
+through the launcher:
+
+```sh
+# macOS — pass the path to `open -a`:
+open -a /Applications/vibesmith.app /path/to/my-game
+
+# Or invoke the binary directly with the project path:
+/Applications/vibesmith.app/Contents/MacOS/vibesmith-app /path/to/my-game
+
+# URL-scheme variant (any platform that recognises the registration):
+open vibesmith://open?path=/path/to/my-game
+```
+
+If the path points at a valid project (a folder containing
+`vibesmith.toml`) the editor opens it directly and the launcher
+never shows. Otherwise the launcher renders as usual and the load
+failure logs to stderr.
+
 ## What just landed
 
 Application source (`src/`, zero framework imports):
