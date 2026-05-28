@@ -31,6 +31,41 @@ Each command is **idempotent**: running it twice produces no
 diff. The install reports a unified-style diff before writing;
 your other MCP servers + top-level config keys are preserved.
 
+## Transport: HTTP (self-healing) vs stdio
+
+vibesmith's MCP server speaks two transports against the **same
+tool surface** — only the wire differs.
+
+- **Streamable HTTP** (`{ "type": "http", "url":
+  "http://127.0.0.1:<port>/mcp" }`) — the self-healing default a
+  scaffolded project writes into `.mcp.json`. MCP clients
+  auto-reconnect HTTP/SSE transports with exponential backoff, so
+  an agent mid-task survives a dropped link without you typing
+  `/mcp reconnect`. This matters most for autonomous, headless,
+  and scheduled runs where nobody is at the keyboard. Start the
+  endpoint with `pnpm mcp` (or open the project in the editor,
+  which manages it for you):
+
+  ```sh
+  pnpm mcp   # vibesmith-mcp-server --http 127.0.0.1:7744
+  ```
+
+  The endpoint is **loopback-only** (`127.0.0.1`) and needs no
+  token — it's unreachable from off-host. Pass a bare `--http` to
+  bind an ephemeral port; the resolved URL is written into
+  `.vibesmith/mcp.dev.json` so tooling can discover it.
+
+- **stdio** (`{ "command": "pnpm", "args": ["exec",
+  "vibesmith-mcp-server"] }`) — the historical default and a
+  documented fallback. It works, but **MCP clients never
+  auto-reconnect a stdio server**: a dropped link stalls the
+  agent until you run `/mcp reconnect`. Prefer HTTP unless your
+  tool can't speak HTTP MCP (rare).
+
+The `vibesmith mcp install <assistant>` adapters below write the
+stdio shape for maximum compatibility; swap the written entry for
+the HTTP shape above when you want self-healing reconnects.
+
 ## Claude Code
 
 Claude Code has the most mature MCP support of the three
