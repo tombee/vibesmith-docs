@@ -9,8 +9,11 @@ adds a scene-graph-aware wrapper above so consumers attach sound
 to nodes the same way they attach scripts. No consumer ships its
 own WebAudio plumbing.
 
-Package: `@vibesmith/audio-runtime` (re-exported by
-`@vibesmith/runtime` in projects opened via the binary).
+Package: `@vibesmith/audio-runtime`. The headless core exports
+(`createEmitter` / `syncListener` / `bus` / `applyAudioRecipe` /
+`captureAudioState` / `unlockAudio`, …) ship from the package root;
+the R3F components `<AudioEmitter>` + `<ListenerSync>` ship from the
+`@vibesmith/audio-runtime/r3f` subpath.
 
 ## What the framework owns vs what WebAudio owns
 
