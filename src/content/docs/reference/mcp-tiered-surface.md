@@ -21,8 +21,11 @@ hand:
 - **Discovery + routing.** `discover(area)` (scenario-tagged
   browse), `tools_find(query, limit?)` (keyword search of the
   deferred catalog), `tools_invoke(id, args)` (call a found
-  deferred tool), `capability_list` (installed extensions +
-  status).
+  deferred tool), `capability_list` (installed capabilities plus
+  the full catalogue of capabilities + opt-in extensions, each with
+  status — enabled / disabled / available — and prose "use when /
+  avoid when" guidance, so an assistant can discover what a project
+  *could* add and toggle it via `project_configure`).
 - **MCP Resources.** `resource_list(namespace?)` (enumerate
   available resources), `resource_read(uri)` (fetch a resource).
 - **Scene reads.** `get_selection` (current selection),
@@ -51,9 +54,11 @@ hand:
 **Tier 2 — deferred catalog.** Name + one-line description +
 scenario tags only until `tools_find` resolves the JSONSchema.
 Examples include `manage_object`, `scenario_author`,
-`manage_extension`, and (as the framework grows) every provider
-call, recipe execution, DCC bridge op, asset-pipeline stage,
-QA probe, scenario authoring action, and GM tooling op.
+`manage_extension`, `project_configure` (enable / disable a
+capability or extension by writing `vibesmith.toml`), and (as the
+framework grows) every provider call, recipe execution, DCC bridge
+op, asset-pipeline stage, QA probe, scenario authoring action, and
+GM tooling op.
 
 Assistants discover Tier-2 tools through the router's two
 retrieval channels:
