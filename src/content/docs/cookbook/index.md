@@ -36,6 +36,14 @@ feels harder than it should.
   N world positions to DOM in one pass with `WorldAnchorList`
   (hit-testing layers, E2E selectors, debug overlays).
 
+### Look + feel
+
+- [Make it look like a game, not a web demo](look-like-a-game.md) —
+  mount the production-floor preset (`<ProductionDefaults>`) for
+  tone-mapping + a light rig/IBL + anti-aliasing + a damped camera +
+  an audio bed, so a fresh scene reads as a game instead of a raw
+  WebGL canvas with HTML pasted on top.
+
 ### Animation
 
 - [Animations](animations.md) — GLTF skeletal animations,
@@ -64,6 +72,10 @@ feels harder than it should.
   (`ui.inventory.grid`, `ui.dialogue.tree`, `ui.layout.card-grid`),
   adapt its params + fixtures + snapshot contract + accessibility
   probes into idiomatic React. Data, not a UI runtime.
+- [Add a settings menu](settings-menu.md) — configure video / sound /
+  input settings with `@vibesmith/settings`; register the builtin
+  groups, extend with your own, and render a menu off
+  `listSettings()`. A library, not a blessed UI.
 
 ### Player controls
 
