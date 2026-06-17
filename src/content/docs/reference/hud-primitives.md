@@ -240,6 +240,34 @@ prefer plain `<WorldAnchor>`. See the
 [batching cookbook recipe](/cookbook/world-anchor-batching/) for
 the full walkthrough.
 
+## Motion — eased HUD transitions
+
+HUD transitions should ease with game feel instead of a browser-default
+linear CSS fade, and must collapse to no motion under
+`prefers-reduced-motion` (Track PF-UI / M2).
+
+- **`<HudTransition>`** — a drop-in eased mount transition. Fades + lifts
+  its children in via a timeline-core easing. It is a *safe default*:
+  where it can't or shouldn't animate (reduced motion, SSR, headless
+  test) it renders its children unwrapped, with no transition and no
+  extra DOM. Opt a subtree out with `enabled={false}`.
+
+  ```tsx
+  <HudTransition>
+    <PausePanel />
+  </HudTransition>
+  ```
+
+- **`useTween(from, to, { durationMs, easing })`** — a frame-driven value
+  tween over a timeline-core `EasingId`, for custom transitions. Returns
+  the current value each frame; snaps to `to` immediately under reduced
+  motion / headless.
+- **`useReducedMotion()`** — subscribes to the OS `prefers-reduced-motion`
+  preference, for branching your own motion.
+
+The pure helpers `tweenValue(from, to, t, easing)` and
+`prefersReducedMotion()` are exported for non-React use.
+
 ## Composition
 
 A typical world-space nameplate composes all three primitives —
