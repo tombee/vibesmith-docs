@@ -25,7 +25,7 @@ the R3F components `<AudioEmitter>` + `<ListenerSync>` ship from the
 | `AudioListener` position + orientation | WebAudio (driven by framework) |
 | `<AudioEmitter>` scene-node component | Framework |
 | Camera → listener sync | Framework |
-| Mixer bus hierarchy (master / music / sfx / dialogue / ambient) | Framework |
+| Mixer bus hierarchy (master / music / sfx / dialogue / ambient / ui) | Framework |
 | Per-bus volume / mute / solo / lowpass / compression persistence | Framework |
 | Asset manifest → buffer cache (content-addressable) | Framework |
 | Recipe parameter → audio graph mapping | Framework |
@@ -78,7 +78,7 @@ notifications, music transitions live above the scene tree.
 import { useAudio } from '@vibesmith/audio-runtime';
 
 const audio = useAudio();
-audio.play('ui.button.confirm', { bus: 'sfx', gainDb: -3 });
+audio.play('ui.button.confirm', { bus: 'ui', gainDb: -3 });
 audio.music.crossfade('music.combat', { durationMs: 2000 });
 audio.bus('dialogue').onPlay(() =>
   audio.bus('music').duck({ targetDb: -12, attackMs: 200, holdMs: 0, releaseMs: 600 }),
@@ -140,8 +140,13 @@ master
 ├── music
 ├── sfx
 ├── dialogue
-└── ambient
+├── ambient
+└── ui      # HUD / menu interaction feedback (Track PF-UI / M1)
 ```
+
+The `ui` bus carries HUD and menu interaction feedback, mixable +
+duckable independently of gameplay `sfx`, and is the default bus for
+`useUiSound` (see "UI interaction sound" below).
 
 Per-bus state persists in `localStorage` under
 `vibesmith.audio.mixer`. The dev shell's **Audio** panel surfaces
@@ -161,7 +166,7 @@ audio.bus('master').setCompression({
 });
 ```
 
-### Why these five and not more
+### Why these six and not more
 
 - **music** vs **ambient** split because their typical mix
   behaviour diverges (music ducks under dialogue; ambient does
@@ -170,11 +175,37 @@ audio.bus('master').setCompression({
   ducked-against bus, and consumers need a stable name to wire
   ducking against.
 - **sfx** holds everything transient.
+- **ui** carries HUD / menu interaction feedback so it mixes (and
+  mutes) independently of gameplay `sfx` — UI clicks shouldn't ride
+  the same fader as combat hits. The default bus for `useUiSound`.
 - **master** is one knob for "everything quieter."
 
-A sixth bus (e.g., `ui`) is consumer territory — the runtime
-supports custom buses via `createBus(name, parent)`. The
-framework's preset is the five named above.
+A seventh bus is consumer territory — the runtime supports custom
+buses via `createBus(name, parent)`. The framework's preset is the
+six named above.
+
+### UI interaction sound
+
+`useUiSound()` makes HUD and menu controls *sound* like a game's,
+not a silent webpage — routed through the `ui` bus. It ships the
+mechanism, never the sounds: a `<UiSoundScope>` holds your asset
+map, and an unconfigured kind is a silent no-op.
+
+```tsx
+<UiSoundScope sounds={{ confirm: 'ui/confirm', hover: 'ui/hover', back: 'ui/back' }}>
+  <PauseMenu />
+</UiSoundScope>;
+
+function Button({ children }) {
+  const sound = useUiSound();
+  // press plays `confirm`, pointer-enter plays `hover`; both no-op
+  // if unconfigured. Opt a control out by not binding.
+  return <button {...sound.bind('confirm')}>{children}</button>;
+}
+```
+
+It also exposes named one-shots (`confirm` / `hover` / `back` /
+`error` / `play`) for non-button feedback.
 
 ### Ducking
 
