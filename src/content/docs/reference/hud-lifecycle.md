@@ -726,6 +726,45 @@ Per-instance `priority` on the JSON node wins over the
 registration's default — useful when one registration mounts
 twice and the two instances need different layering.
 
+### Compositing — sharing the post grade (Track PF-UI / M4)
+
+By default an R3F HUD layer renders in its `<Hud>` pass **over** the
+world, *un-graded* — it doesn't share the world's tone-map / colour-grade
+/ vignette from `@vibesmith/postprocessing`. For most layers that's
+correct. For a **hero** element that should feel lit by the same world
+(a holographic minimap, a weapon preview), set `composite: 'post'` on the
+registration so its output is routed through the post chain and shares the
+grade:
+
+```ts
+defineSceneHudLayer({
+  id: 'mygame/holo-minimap',
+  composite: 'post',          // hero element — share the world's grade
+  params: z.object({}),
+  renderJsx: () => <HoloMinimap />,
+});
+```
+
+`composite` is **registration-level only** — it describes the layer
+*kind*, not a per-instance scene-JSON field (the `hud-layer` node schema
+is unchanged). It is an opt-in default of `'overlay'`:
+
+- **Tier-gated.** `'post'` composites through the chain only when the
+  active adaptive-rendering tier is at/above `HUD_LAYER_COMPOSITE_FLOOR`
+  (`HIGH`). Below the floor — or when no post-composite consumer is
+  mounted — it falls back to the `'overlay'` path (a one-time dev warning
+  notes the tier fallback). `'post'` never forces a budget the tier can't
+  pay; `'overlay'` is always the floor.
+- **Safe default.** Until the post-composite consumer is present a
+  `'post'` layer is byte-identical to `'overlay'`, so adding the flag
+  never changes headless / snapshot output on its own.
+
+> **Status (M4).** The flag, the tier-gate + fallback, the `useActiveTier`
+> hook, and the hero-layer channel seam are shipped + tested. The GPU pass
+> that renders a routed layer *through* the post chain is the remaining,
+> browser-verified step. Until it lands, `'post'` resolves to `'overlay'`
+> everywhere.
+
 ### Lifecycle + inspector visibility
 
 A `kind: "hud-layer"` JSON node participates in the scene tree
@@ -763,6 +802,7 @@ function defineSceneHudLayer<TParams>(spec: {
   id: string;
   params: z.ZodType<TParams, z.ZodTypeDef, any>;
   priority?: number;
+  composite?: 'overlay' | 'post'; // default 'overlay'; see Compositing
   renderJsx: (params: TParams) => ReactNode;
 }): SceneHudLayerRegistration<TParams>;
 ```
