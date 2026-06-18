@@ -1,6 +1,6 @@
 ---
 title: 'Scene renderer — @vibesmith/scene-renderer'
-description: 'Engine substrate for parsed *.scene.json content. parseScene, loadSceneFromUrl, and the planned <SceneRenderer scene> consumer surface for standalone browser builds.'
+description: 'Engine substrate for parsed *.scene.json content. parseScene, loadSceneFromUrl, and the <SceneRenderer scene> consumer surface for standalone browser builds.'
 ---
 
 > **Framework. Game-agnostic.** The scene-renderer substrate
@@ -18,19 +18,20 @@ Unity's `UnityEngine.SceneManagement` vs `UnityEditor.SceneView`,
 Godot's runtime scene loader vs editor scene dock, Unreal's
 `UWorld` vs `FLevelEditorViewportClient`.
 
-## Slice status
+## Surface status
 
-The package is landing in two slices. This page documents both;
-the live import surface tracks slice 1.
+`<SceneRenderer>` ships from `@vibesmith/scene-renderer` alongside the
+parser + loader. The script-tick driver (`<ScriptedMesh>`,
+`<LateUpdateScene>`) ships too, but still lives in the editor app
+because it depends on editor-only seams (`usePlayState`,
+`usePhysicsScene`); hoisting it behind injectable hooks is a follow-up
+that doesn't change the consumer surface.
 
-| Slice | What ships | Where |
-|-------|-----------|-------|
-| **1 (now)** | `parseScene`, `loadSceneFromUrl`, all scene types, `SceneLoadError` | `@vibesmith/scene-renderer` |
-| **2 (follow-up)** | `<SceneRenderer scene>`, `<ScriptedMesh>`, `<LateUpdateScene>`, extension-point slots the editor composes overlays through | follow-up issue |
-
-Consumer code that uses slice 1 today (`parseScene` + the loader)
-keeps working unchanged when slice 2 lands — only
-`<SceneRenderer>` becomes additionally available.
+| Surface | What it exports | Where it lives |
+|---------|-----------------|----------------|
+| Parser + loader | `parseScene`, `loadSceneFromUrl`, all scene types, `SceneLoadError` | `@vibesmith/scene-renderer` |
+| R3F renderer | `<SceneRenderer scene>` + the extension-point slots the editor composes overlays through (`overrideCamera`, `canvasChildren`, `onLoadError`, `onPick`, `canvasProps`) | `@vibesmith/scene-renderer` |
+| Script-tick driver | `<ScriptedMesh>`, `<LateUpdateScene>` | editor app (pending hoist behind injectable hooks) |
 
 ## When to reach for this package
 
@@ -47,7 +48,7 @@ authoring a viewport overlay), reach for the editor's internal
 modules instead — they layer editor chrome on top of this
 substrate.
 
-## Surface (slice 1)
+## Surface — parser + loader
 
 ### `parseScene(raw): Scene`
 
@@ -146,9 +147,9 @@ DOM-overlay tier). See the
 [HUD lifecycle reference § R3F HUD layers](/vibesmith-docs/reference/hud-lifecycle/#r3f-hud-layers)
 for the full surface + when to reach for which tier.
 
-## Surface (slice 2, planned)
+## Surface — the R3F renderer
 
-The follow-up slice will export the React/R3F renderer:
+The package exports the React/R3F renderer:
 
 ```tsx
 import { SceneRenderer } from '@vibesmith/scene-renderer';
@@ -158,11 +159,13 @@ export function App() {
 }
 ```
 
-The renderer mounts camera + lights + built-in mesh nodes,
-dispatches custom `kind` nodes against `lookupSceneNodeKind`,
-and wires the script-tick driver (`<ScriptedMesh>`,
-`<LateUpdateScene>`). Pure game runtime; ships in the game
-bundle.
+The renderer mounts camera + lights + built-in mesh nodes and
+dispatches custom `kind` nodes against `lookupSceneNodeKind`. The
+script-tick driver (`<ScriptedMesh>`, `<LateUpdateScene>`) wires the
+per-frame update path; it currently ships from the editor app (it
+depends on the editor's `usePlayState` + physics' `usePhysicsScene`)
+and is pending a hoist into this package behind injectable hooks. Pure
+game runtime; ships in the game bundle.
 
 The editor consumes the same renderer with overlays composed via
 extension-point slots (`playing`, `overrideCamera`,
