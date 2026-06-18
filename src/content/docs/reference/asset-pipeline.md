@@ -249,6 +249,14 @@ vibesmith assets import /path/to/cursor.png
 #     address   image:cursor
 #     sidecar   assets/images/cursor.png.meta.json
 
+# Import a mesh. FBX / OBJ are converted to a self-contained .glb on the
+# way in (the web runtime mounts glTF, not FBX) — geometry, materials, and
+# skin/rig + animations carry over. .glb / .gltf are imported as-is.
+vibesmith assets import ~/packs/SK_Character_Male_Rouge_01.fbx
+#   converted … → glb via assimp
+#   imported  … → assets/meshes/SK_Character_Male_Rouge_01.glb
+#     address   mesh:SK_Character_Male_Rouge_01
+
 # Override the assigned address (e.g. after a rename).
 vibesmith assets import /path/to/pointer.png --address image:icons/cursor
 
