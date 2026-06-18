@@ -1,6 +1,6 @@
 ---
 title: 'Scene renderer — @vibesmith/scene-renderer'
-description: 'Engine substrate for parsed *.scene.json content. parseScene, loadSceneFromUrl, and the <SceneRenderer scene> consumer surface for standalone browser builds.'
+description: 'Engine substrate for parsed *.scene.json content. parseScene, loadSceneFromUrl, and the <SceneNodes> / <SceneRenderer> / <SceneLoader> consumer surface that renders scenes — and runs their node scripts — in standalone browser builds.'
 ---
 
 > **Framework. Game-agnostic.** The scene-renderer substrate
@@ -20,18 +20,20 @@ Godot's runtime scene loader vs editor scene dock, Unreal's
 
 ## Surface status
 
-`<SceneRenderer>` ships from `@vibesmith/scene-renderer` alongside the
-parser + loader. The script-tick driver (`<ScriptedMesh>`,
-`<LateUpdateScene>`) ships too, but still lives in the editor app
-because it depends on editor-only seams (`usePlayState`,
-`usePhysicsScene`); hoisting it behind injectable hooks is a follow-up
-that doesn't change the consumer surface.
+Shipped: the parser + loader **and** three rendering components.
+The substrate also **runs node scripts** — a scene mesh node with a
+`script` binding (a `defineGameScript`) ticks each frame in a
+standalone build, no editor required. The editor's play-state /
+physics-coupled adapter (`<ScriptedMesh>`, `<LateUpdateScene>`) is
+separate and renders via its own path, so node scripts never
+double-run.
 
-| Surface | What it exports | Where it lives |
-|---------|-----------------|----------------|
-| Parser + loader | `parseScene`, `loadSceneFromUrl`, all scene types, `SceneLoadError` | `@vibesmith/scene-renderer` |
-| R3F renderer | `<SceneRenderer scene>` + the extension-point slots the editor composes overlays through (`overrideCamera`, `canvasChildren`, `onLoadError`, `onPick`, `canvasProps`) | `@vibesmith/scene-renderer` |
-| Script-tick driver | `<ScriptedMesh>`, `<LateUpdateScene>` | editor app (pending hoist behind injectable hooks) |
+| Surface | What it exports |
+|---------|-----------------|
+| Parser + loader | `parseScene`, `loadSceneFromUrl`, all scene types, `SceneLoadError` |
+| Canvas-less renderer | `<SceneNodes scene>` — renders the scene into a `<Canvas>` you own |
+| Canvas-owning renderer | `<SceneRenderer scene>` — `<Canvas>` + `<SceneNodes>`, plus the editor's overlay slots (`overrideCamera`, `canvasChildren`, `onLoadError`, `onPick`, `canvasProps`) |
+| Load-from-URL | `<SceneLoader source>` — fetch + parse + `<SceneRenderer>` |
 
 ## When to reach for this package
 
@@ -147,9 +149,49 @@ DOM-overlay tier). See the
 [HUD lifecycle reference § R3F HUD layers](/vibesmith-docs/reference/hud-lifecycle/#r3f-hud-layers)
 for the full surface + when to reach for which tier.
 
-## Surface — the R3F renderer
+## Surface — the R3F renderers
 
-The package exports the React/R3F renderer:
+Three components, layered. All mount camera + lights + built-in
+mesh nodes (running their node `defineGameScript`s), dispatch
+custom `kind` nodes against `lookupSceneNodeKind`, and host HUD
+layers. Pick by who owns the `<Canvas>`.
+
+### `<SceneNodes scene>` — the canvas-less primitive
+
+Renders the scene's contents into a `<Canvas>` **you already
+own**, so an authored scene composes with your own R3F (a custom
+camera rig, a background shader, `<ProductionDefaults>`) in one
+Canvas — no nested Canvas. Because it lives in a Canvas it didn't
+create, it applies the authored `perspective-camera` node
+imperatively; pass `applyCamera={false}` when your own controller
+owns the camera.
+
+```tsx
+import { SceneNodes, parseScene } from '@vibesmith/scene-renderer';
+import { Canvas } from '@react-three/fiber';
+import { ProductionDefaults } from '@vibesmith/production-defaults';
+
+const scene = parseScene(rawJson);
+
+export function World() {
+  return (
+    <Canvas shadows>
+      <ProductionDefaults tier="MEDIUM" backend="webgl" />
+      <SceneNodes scene={scene} />
+      {/* …your own meshes / effects as siblings… */}
+    </Canvas>
+  );
+}
+```
+
+### `<SceneRenderer scene>` — owns the Canvas
+
+A `<Canvas>` wrapped around `<SceneNodes>`. Reach for it when the
+scene is the whole view. Exposes the editor's overlay slots
+(`overrideCamera`, `canvasChildren`, `onPick`, `onLoadError`,
+`canvasProps`) — selection outlines, transform gizmo, magic-pen,
+grid, orbit controls all stay editor-side and compose through
+`canvasChildren`.
 
 ```tsx
 import { SceneRenderer } from '@vibesmith/scene-renderer';
@@ -159,19 +201,21 @@ export function App() {
 }
 ```
 
-The renderer mounts camera + lights + built-in mesh nodes and
-dispatches custom `kind` nodes against `lookupSceneNodeKind`. The
-script-tick driver (`<ScriptedMesh>`, `<LateUpdateScene>`) wires the
-per-frame update path; it currently ships from the editor app (it
-depends on the editor's `usePlayState` + physics' `usePhysicsScene`)
-and is pending a hoist into this package behind injectable hooks. Pure
-game runtime; ships in the game bundle.
+### `<SceneLoader source>` — fetch + parse + render
 
-The editor consumes the same renderer with overlays composed via
-extension-point slots (`playing`, `overrideCamera`,
-`canvasChildren`, `onPick`, `onLoadError`) — selection outlines,
-transform gizmo, magic-pen overlay, grid, orbit controls all stay
-editor-side.
+`loadSceneFromUrl` + `<SceneRenderer>`. Use it for scenes fetched
+at runtime (level loading, remote scenes). When the scene is
+bundled (imported as JSON), prefer `parseScene(doc)` +
+`<SceneNodes>` / `<SceneRenderer>` directly — no fetch, scene
+validated at module load.
+
+```tsx
+import { SceneLoader } from '@vibesmith/scene-renderer';
+
+export function App() {
+  return <SceneLoader source="/scenes/main.scene.json" loadingFallback={<Splash />} />;
+}
+```
 
 ## Imports recap
 
@@ -181,6 +225,10 @@ import {
   parseScene,
   loadSceneFromUrl,
   SceneLoadError,
+  // R3F renderers
+  SceneNodes,
+  SceneRenderer,
+  SceneLoader,
   // Types
   type Scene,
   type SceneNode,
