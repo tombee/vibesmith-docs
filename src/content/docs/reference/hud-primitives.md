@@ -23,6 +23,7 @@ Exported from `@vibesmith/runtime`.
 | `<WorldAnchor target={vec3}>` | Project one 3D world position to a DOM node each frame | Unity World-Space Canvas · Unreal `UWidgetComponent` (World) · Godot `unproject_position` |
 | `<WorldLabel target text>` | Text-bubble convenience over `WorldAnchor` | as above |
 | `<WorldAnchorList entries renderItem>` | Project N world positions in one pass | as above, batched |
+| `<SceneThemeBridge lighting={…}>` | Derive HUD colour tokens from the scene's lighting | Unity light-driven UI Color · Godot `WorldEnvironment` → `Theme` · Unreal scene-driven Slate brush |
 
 The `edge` enum, `target` shapes, and token keys are all chosen
 so a single field flips unambiguously — an AI assistant editing a
@@ -267,6 +268,50 @@ linear CSS fade, and must collapse to no motion under
 
 The pure helpers `tweenValue(from, to, t, easing)` and
 `prefersReducedMotion()` are exported for non-React use.
+
+## Scene cohesion — theme tokens from lighting
+
+A HUD themed in isolation — a hand-picked accent over a fixed dark
+panel — reads as a separate HTML layer pasted on top of the render.
+A cohesive game UI instead *belongs* to its scene: the chrome picks up
+the key light's hue, and panel / text contrast track how bright the
+environment is. The scene-theme bridge derives a **conservative** set
+of colour tokens from the same `LightingArtifact` the scene already
+renders (Track PF-UI / M3):
+
+| Token | Derived from |
+| --- | --- |
+| `color/accent` | the key light's colour (the scene's dominant directional hue) |
+| `color/surface` | a dark chrome panel, tinted toward the ambient colour and lifted a touch by exposure — bounded to stay legible over any scene |
+| `color/text` | the higher-contrast of near-white / near-black against the surface (WCAG ratio) |
+
+- **`<SceneThemeBridge lighting={…}>`** — drop it *inside* your existing
+  `<ThemeProvider>` (so fonts / radii are inherited) and *around* the
+  HUD. The three colour tokens track the scene; every other token falls
+  through to your theme.
+
+  ```tsx
+  <ThemeProvider theme={appTheme}>
+    <SceneThemeBridge lighting={outdoorDaylight}>
+      <GameHud />   {/* useThemeToken('color/accent') tracks the key light */}
+    </SceneThemeBridge>
+  </ThemeProvider>
+  ```
+
+- **`useSceneDerivedTheme(lighting, { overrides, merge })`** — the hook
+  behind the bridge; returns a (non-registered) `Theme` you can pass to
+  a `<ThemeProvider>` yourself.
+- **`deriveThemeTokensFromLighting(lighting, overrides?)`** — the pure,
+  deterministic (snapshot-safe) derivation, for non-React use.
+
+**The art-direction boundary.** vibesmith owns the *production floor*
+(cohesion, contrast) but never the *art direction*. The bridge derives
+only the three colour tokens it can defend as "track the scene" — fonts,
+radii, spacing, and bespoke brand colours stay yours, and any single
+derived token is overridable via `overrides`. Pass the same artifact
+you give `<LightingEnvironment>`; the derivation takes a structural
+subset of it, so `@vibesmith/runtime` never depends on
+`@vibesmith/lighting`.
 
 ## Composition
 
