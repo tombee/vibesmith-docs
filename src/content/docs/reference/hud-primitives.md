@@ -23,6 +23,8 @@ Exported from `@vibesmith/runtime`.
 | `<WorldAnchor target={vec3}>` | Project one 3D world position to a DOM node each frame | Unity World-Space Canvas · Unreal `UWidgetComponent` (World) · Godot `unproject_position` |
 | `<WorldLabel target text>` | Text-bubble convenience over `WorldAnchor` | as above |
 | `<WorldAnchorList entries renderItem>` | Project N world positions in one pass | as above, batched |
+| `<HudTransition>` | Eased, reduced-motion-safe HUD mount transition | Unity `CanvasGroup` fade · Godot `Control` modulate Tween · Unreal UMG Widget Animation |
+| `<SceneThemeBridge lighting={…}>` | Derive HUD colour tokens from the scene's lighting | Unity light-driven UI Color · Godot `WorldEnvironment` → `Theme` · Unreal scene-driven Slate brush |
 
 The `edge` enum, `target` shapes, and token keys are all chosen
 so a single field flips unambiguously — an AI assistant editing a
@@ -239,6 +241,78 @@ O(adds + removes) diff work. Pass `containerRef` instead of
 prefer plain `<WorldAnchor>`. See the
 [batching cookbook recipe](/cookbook/world-anchor-batching/) for
 the full walkthrough.
+
+## Motion — eased HUD transitions
+
+HUD transitions should ease with game feel instead of a browser-default
+linear CSS fade, and must collapse to no motion under
+`prefers-reduced-motion` (Track PF-UI / M2).
+
+- **`<HudTransition>`** — a drop-in eased mount transition. Fades + lifts
+  its children in via a timeline-core easing. It is a *safe default*:
+  where it can't or shouldn't animate (reduced motion, SSR, headless
+  test) it renders its children unwrapped, with no transition and no
+  extra DOM. Opt a subtree out with `enabled={false}`.
+
+  ```tsx
+  <HudTransition>
+    <PausePanel />
+  </HudTransition>
+  ```
+
+- **`useTween(from, to, { durationMs, easing })`** — a frame-driven value
+  tween over a timeline-core `EasingId`, for custom transitions. Returns
+  the current value each frame; snaps to `to` immediately under reduced
+  motion / headless.
+- **`useReducedMotion()`** — subscribes to the OS `prefers-reduced-motion`
+  preference, for branching your own motion.
+
+The pure helpers `tweenValue(from, to, t, easing)` and
+`prefersReducedMotion()` are exported for non-React use.
+
+## Scene cohesion — theme tokens from lighting
+
+A HUD themed in isolation — a hand-picked accent over a fixed dark
+panel — reads as a separate HTML layer pasted on top of the render.
+A cohesive game UI instead *belongs* to its scene: the chrome picks up
+the key light's hue, and panel / text contrast track how bright the
+environment is. The scene-theme bridge derives a **conservative** set
+of colour tokens from the same `LightingArtifact` the scene already
+renders (Track PF-UI / M3):
+
+| Token | Derived from |
+| --- | --- |
+| `color/accent` | the key light's colour (the scene's dominant directional hue) |
+| `color/surface` | a dark chrome panel, tinted toward the ambient colour and lifted a touch by exposure — bounded to stay legible over any scene |
+| `color/text` | the higher-contrast of near-white / near-black against the surface (WCAG ratio) |
+
+- **`<SceneThemeBridge lighting={…}>`** — drop it *inside* your existing
+  `<ThemeProvider>` (so fonts / radii are inherited) and *around* the
+  HUD. The three colour tokens track the scene; every other token falls
+  through to your theme.
+
+  ```tsx
+  <ThemeProvider theme={appTheme}>
+    <SceneThemeBridge lighting={outdoorDaylight}>
+      <GameHud />   {/* useThemeToken('color/accent') tracks the key light */}
+    </SceneThemeBridge>
+  </ThemeProvider>
+  ```
+
+- **`useSceneDerivedTheme(lighting, { overrides, merge })`** — the hook
+  behind the bridge; returns a (non-registered) `Theme` you can pass to
+  a `<ThemeProvider>` yourself.
+- **`deriveThemeTokensFromLighting(lighting, overrides?)`** — the pure,
+  deterministic (snapshot-safe) derivation, for non-React use.
+
+**The art-direction boundary.** vibesmith owns the *production floor*
+(cohesion, contrast) but never the *art direction*. The bridge derives
+only the three colour tokens it can defend as "track the scene" — fonts,
+radii, spacing, and bespoke brand colours stay yours, and any single
+derived token is overridable via `overrides`. Pass the same artifact
+you give `<LightingEnvironment>`; the derivation takes a structural
+subset of it, so `@vibesmith/runtime` never depends on
+`@vibesmith/lighting`.
 
 ## Composition
 
