@@ -148,8 +148,19 @@ or the four-scale sci-fi ladder.
 
 ## What a generator is
 
+> **`defineProcGenerator` ≠ `defineGenerator`.** This is the *procgen*
+> generator factory (`@vibesmith/procgen`). It is unrelated to
+> `@vibesmith/runtime`'s `defineGenerator` — the scene-construction
+> factory whose contract is `(recipe, ctx) => Composition`. The two
+> never shared a contract, only a name; the procgen one carries the
+> `ProcGen` prefix so it's unambiguous on sight. `@vibesmith/procgen`
+> still re-exports the old `defineGenerator` /
+> `GeneratorDefinitionError` names as `@deprecated` aliases for one
+> release cycle — update imports to `defineProcGenerator` /
+> `ProcGeneratorDefinitionError`.
+
 ```ts
-defineGenerator({
+defineProcGenerator({
   id: 'settlement.polygonal-patch.v1',
   scale: 'settlement',
   reads: ['region'],            // parent + sibling scales whose
