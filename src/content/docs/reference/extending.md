@@ -162,8 +162,16 @@ Prefabs are the right move when:
 - You want the assistant to author *instances* of the pattern via
   the prefab picker without re-deriving the shape every time.
 
-```tsx
-// scripts/deck-stack.tsx
+A prefab declares a pure-data `template` ([#906](https://github.com/tombee/vibesmith/issues/906)):
+a function from the resolved `params` to a `SceneNode`-shaped tree
+the scene-renderer expands at scene-load + HMR into real,
+addressable nodes. The template returns plain data (`kind` /
+`prefab` / `params` / `transform` / `children`) — **no React, no
+hooks, no side effects**. Behaviour belongs in a `defineGameScript`
+the template references via a child node's `script` field.
+
+```ts
+// scripts/deck-stack.ts
 import { definePrefab } from '@vibesmith/runtime';
 import { z } from 'zod';
 
@@ -173,39 +181,50 @@ definePrefab({
     count: z.number().int().min(0).default(40),
     height: z.number().default(0.02),
   }),
-  renderJsx: (params) => {
-    const { count, height } = params as { count: number; height: number };
-    const cards = Array.from({ length: count }, (_, i) => (
-      <mesh key={i} position={[0, i * height, 0]}>
-        <planeGeometry args={[5, 7]} />
-        <meshStandardMaterial color="#444" />
-      </mesh>
-    ));
-    return <group>{cards}</group>;
-  },
+  template: ({ count, height }) => ({
+    kind: 'group',
+    children: Array.from({ length: count }, (_, i) => ({
+      kind: 'mesh',
+      transform: { position: [0, i * height, 0] },
+      geometry: { kind: 'plane', size: [5, 7] },
+      material: { kind: 'standard', color: '#444' },
+    })),
+  }),
 });
 ```
 
-Reference the prefab from scene JSON — the canonical reference path
-is `kind: "<prefab-id>"` once the prefab's id matches the
-`<owner>/<surface>` convention (the framework auto-bridges the
-prefab into the scene-JSON dispatch registry):
+Reference the prefab from scene JSON via the `prefab` field — per
+[#906](https://github.com/tombee/vibesmith/issues/906)
+`expandScenePrefabs` replaces every `{ prefab, params?, transform?,
+children? }` reference with the prefab's `template(params)` sub-tree
+so the hierarchy panel, the selection bus, and the MCP scene-tree
+resource all see real, addressable nodes:
 
 ```jsonc
 {
   "id": "main-deck",
-  "kind": "my-game/deck-stack",
+  "prefab": "my-game/deck-stack",
   "transform": { "position": [0, 0, 0] },
   "params": { "count": 30 }
 }
 ```
 
-`renderJsx` must be **pure** on `params` — return only a React
-element tree; no side effects, no registry mutations, no
-subscriptions outside the returned tree. Side-effect lifecycles
-belong inside the returned JSX (via standard React `useEffect`).
-The prefab's `params` schema drives the inspector + the AI
-surface, just like a script's `parameters` schema does.
+The template must be **pure** on `params` — same params in, same
+tree out, no side effects. The prefab's `params` schema drives the
+inspector + the AI surface, just like a script's `parameters` schema
+does.
+
+> **`renderJsx` is the deprecated escape hatch.** A prefab may
+> instead supply a React-shaped `renderJsx: (params) => ReactNode`
+> for the rare case that genuinely needs a React tree (the
+> [#901](https://github.com/tombee/vibesmith/issues/901) bridge
+> shape). It is `@deprecated` — kept one release for back-compat,
+> then removed — and `prefab`-field scene-JSON references require
+> `template` (a `renderJsx`-only prefab fails expansion with
+> `PREFAB_NO_TEMPLATE`). Reach for `template` first; structural
+> composition is data, not rendering. See
+> [Prefab system](prefab-system.md) § *Pure-data structural
+> templates*.
 
 ## Worked example — full extension stack
 
@@ -354,29 +373,26 @@ defineSceneNodeKind({
 ```
 
 A composite whose pieces are real scene-graph entities (selectable,
-inspectable, snapshot-deterministic) is a prefab. The
-`renderJsx`-emits-N-elements anti-pattern flattens the hierarchy
-into one node while the viewport contains N — selection silently
-misses N − 1 of them.
+inspectable, snapshot-deterministic) is a prefab. A
+`renderJsx`-emits-N-elements shape flattens the hierarchy into one
+React node while the viewport contains N — selection silently misses
+N − 1 of them. The pure-data `template` expands into N real,
+addressable scene nodes instead.
 
 ```ts
 // DO
 definePrefab({
   id: 'my-game/deck-stack',
   params: z.object({ count: z.number().int().min(0).default(40) }),
-  renderJsx: (params) => {
-    const { count } = params as { count: number };
-    return (
-      <group>
-        {Array.from({ length: count }, (_, i) => (
-          <mesh key={i} position={[0, i * 0.02, 0]}>
-            <planeGeometry args={[5, 7]} />
-            <meshStandardMaterial color="#444" />
-          </mesh>
-        ))}
-      </group>
-    );
-  },
+  template: ({ count }) => ({
+    kind: 'group',
+    children: Array.from({ length: count }, (_, i) => ({
+      kind: 'mesh',
+      transform: { position: [0, i * 0.02, 0] },
+      geometry: { kind: 'plane', size: [5, 7] },
+      material: { kind: 'standard', color: '#444' },
+    })),
+  }),
 });
 ```
 

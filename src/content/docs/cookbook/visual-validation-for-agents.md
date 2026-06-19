@@ -138,7 +138,8 @@ import { defineGameScript } from '@vibesmith/runtime';
 
 defineGameScript({
   id: 'fixture-bridge',
-  onMount: ({ ctx }) => {
+  onStart: (ctx) => {
+    void ctx;
     const bridge = (globalThis as any).__vibesmithValidationBridge;
     return bridge?.subscribeToActions((action: any) => {
       if (action.type !== 'vibesmith.fixture.set') return;

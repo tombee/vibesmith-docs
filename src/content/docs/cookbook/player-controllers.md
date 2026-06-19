@@ -3,14 +3,35 @@ title: 'Player controllers (click-to-move, ability bar, follow camera)'
 description: 'Retrieve a game-agnostic controller recipe from recipe canon — click-to-move locomotion, a slotted ability bar, a third-person follow camera — and adapt its params + reference impl + snapshot contract into your game.'
 ---
 
-vibesmith ships three **player-controller recipes** in
-`@vibesmith/recipe-canon` for the controls almost every
-RPG-shaped game needs: terrain-aware click-to-move locomotion, a
-slotted ability bar, and a third-person follow camera. They
-follow the same *retrieve → adapt → validate* flow as the shader,
-VFX, and UI recipes — your AI assistant queries the recipe canon,
-adapts the recipe to your feel, and the framework hands you a
-pure reference implementation plus a snapshot contract.
+vibesmith ships three **player-controller recipes** for the
+controls almost every RPG-shaped game needs: terrain-aware
+click-to-move locomotion, a slotted ability bar, and a
+third-person follow camera. They follow the same *retrieve →
+adapt → validate* flow as the shader, VFX, and UI recipes — your
+AI assistant queries the recipe canon, adapts the recipe to your
+feel, and the framework hands you a pure reference implementation
+plus a snapshot contract.
+
+:::caution[`@vibesmith/recipe-canon` is editor-tier — don't ship it]
+The recipe canon (`findRecipes` / `getRecipe`, the reference
+controller cores) is an **authoring-time** package: your AI
+assistant uses it to *discover and retrieve* a controller while you
+build, but it must **not** be imported into your shipped game
+bundle. What runs in the game are the **runtime-tier** primitives
+the recipes are built on:
+
+- **third-person character + locomotion + camera-relative
+  movement** → `createThirdPersonController` from
+  `@vibesmith/animation-runtime/react`;
+- **follow / orbit / cinematic camera** → `defineVirtualCamera` +
+  `createCameraBrain` + `<CameraRig>` / `<VirtualCamera>` from
+  `@vibesmith/camera`.
+
+For the click-to-move and ability-bar *step cores*, copy the
+adapted reference impl into your own project code rather than
+importing the editor-tier package at runtime. The snippets below
+show that runtime wiring.
+:::
 
 **The framework ships shape + reference; you tune feel.** Each
 recipe carries a parameter schema, framework-shipped defaults, a
@@ -28,7 +49,13 @@ speed, sensitivities, and damping.
 | `player-controller.ability-bar` | N slotted abilities bound to `AbilityArtifact` canon ids; input bindings trigger casts, per-slot + optional global cooldowns gate recasts, mana/stamina costs deduct on cast. |
 | `camera.follow-third-person` | Orbit yaw/pitch on drag, scroll to zoom within a clamped range, framerate-independent smooth-follow damping, occlusion-raycast pullback, optional cinematic auto-frame. |
 
-## Retrieve a recipe
+## Retrieve a recipe (authoring time)
+
+This runs while you build — in the editor, a one-off script, or
+your AI assistant's hands — **not** in the shipped game. It reads
+the editor-tier `@vibesmith/recipe-canon` to find and inspect a
+controller's shape; you then adapt its reference core into runtime
+code (see each section below).
 
 ```ts
 import { findRecipes, getRecipe } from '@vibesmith/recipe-canon';
@@ -71,17 +98,23 @@ if (recipe?.kind === 'controller') {
 
 ## Click-to-move
 
-Import the reference impl directly + drive it from your tick loop.
-The recipe consumes a *resolved* click (you raycast in your
+Adapt the reference core into your project (e.g.
+`src/controllers/click-to-move.ts`) — copy the pure step from the
+recipe and tune it — then drive it from your tick loop. Don't
+import `@vibesmith/recipe-canon` here: it's editor-tier and the
+`createClickToMoveController` core has no runtime-tier re-export,
+so a runtime import trips the `runtime → editor` package-tier
+guard. The core consumes a *resolved* click (you raycast in your
 renderer) and a terrain query (typically `ctx.terrain` from the
 PG-4 terrain substrate, or a stub for tests):
 
 ```ts
+// src/controllers/click-to-move.ts — your adapted copy of the recipe core.
 import {
   createClickToMoveController,
   CLICK_TO_MOVE_DEFAULTS,
   type TerrainQuery,
-} from '@vibesmith/recipe-canon';
+} from './click-to-move-core';
 
 const ctrl = createClickToMoveController({
   ...CLICK_TO_MOVE_DEFAULTS,
@@ -110,11 +143,12 @@ Slots bind to your `AbilityArtifact` canon ids. The recipe owns
 cooldowns + resource economics; you own the artifacts + the UI:
 
 ```ts
+// src/controllers/ability-bar.ts — your adapted copy of the recipe core.
 import {
   createAbilityBarController,
   ABILITY_BAR_DEFAULTS,
   cooldownFraction,
-} from '@vibesmith/recipe-canon';
+} from './ability-bar-core';
 
 const bar = createAbilityBarController(ABILITY_BAR_DEFAULTS);
 bar.bind(0, 'fireball');
@@ -139,39 +173,54 @@ slot after any cast.
 
 ## Follow camera
 
-The solver returns spherical camera state + the resolved world
-eye position. You feed it pointer + scroll deltas and an
-occlusion raycast; you apply the eye:
+The runtime camera lives in `@vibesmith/camera`. Define a
+follow-third-person virtual camera, drop it into a `<CameraRig>`
+(which owns the brain — priority arbitration + ease-blended
+transitions + occlusion pullback), and the rig tracks the player
+for you:
 
-```ts
-import {
-  createFollowCameraController,
-  FOLLOW_CAMERA_DEFAULTS,
-} from '@vibesmith/recipe-canon';
+```tsx
+import { CameraRig, VirtualCamera } from '@vibesmith/camera/react';
+import { defineVirtualCamera } from '@vibesmith/camera';
 
-const cam = createFollowCameraController({
-  ...FOLLOW_CAMERA_DEFAULTS,
-  damping: { position: 14, rotation: 18 }, // snappier
+const follow = defineVirtualCamera({
+  id: 'game/follow',
+  priority: 10,
+  lens: { fov: 50 },
+  body: { kind: 'orbit', target: 'player', distance: 6, pitch: 0.5 },
+  aim: { kind: 'look-at', target: 'player' },
 });
 
-const s = cam.tick(
-  {
-    target: player.position.toArray(),
-    orbitDelta: dragging ? [dx, dy] : null,
-    zoomDelta: wheel ?? null,
-    occlusion: (from, to) => raycastWorld(from, to), // distance or null
-    cinematicFrame: null,
-  },
-  dt,
-);
-threeCamera.position.set(...s.eye);
-threeCamera.lookAt(player.x, player.y + s.offset[1], player.z);
+<CameraRig occlusion={{ enabled: true, minDistance: 1 }}>
+  <VirtualCamera {...follow} />
+</CameraRig>;
 ```
 
+For a controllable third-person character — input-driven,
+camera-relative movement plus the idle/walk/run locomotion blend —
+reach for `createThirdPersonController` from
+`@vibesmith/animation-runtime/react`, which activates the follow
+vcam and steers movement relative to its yaw:
+
+```ts
+import { createThirdPersonController } from '@vibesmith/animation-runtime/react';
+
+const controller = createThirdPersonController({
+  input: moveAxis,    // useAxis('move') — { current: Vec2 }
+  camera: ctx.camera, // the runtime camera handle — { activate(id), yaw() }
+  params: { moveSpeed: 4.5, cameraId: 'game/follow' },
+});
+controller.activateCamera();
+// each frame: controller.tick(dt) → controller.state.position / .yaw place the
+// avatar; controller.movement feeds <AnimatedCharacter movement>.
+```
+
+The recipe's input-driven orbit/zoom/damping *solver* core stays
+available for retrieval (adapt it into project code if you want the
+PC-1 feel knobs) — but the resting follow camera is the vcam above.
 Occlusion pullback springs the camera in to the first blocker
 (never closer than `minDistance`) and back out smoothly once the
-view clears. Set `cinematicAutoFrame: true` + pass a
-`cinematicFrame` to pose the camera on quest events.
+view clears.
 
 ## Snapshot contract
 
@@ -182,14 +231,16 @@ slices). Each slice is plain JSON, so
 codec, and replay is deterministic given recorded inputs:
 
 ```ts
-import {
-  captureMovement,
-  restoreMovement,
-} from '@vibesmith/recipe-canon';
+// The capture/restore pair travels with the adapted core in your project.
+import { captureMovement, restoreMovement } from './controllers/click-to-move-core';
 
 const snap = captureMovement(ctrl.state);   // → JSON-serialisable
 const restored = restoreMovement(snap);     // identical trajectory on replay
 ```
+
+`createThirdPersonController` carries its own `capture()` /
+`restore()` over its movement state, so the runtime third-person
+path snapshots without any editor-tier import.
 
 ## Watch out for
 
@@ -214,8 +265,14 @@ const restored = restoreMovement(snap);     // identical trajectory on replay
 
 ## Related
 
+- [Animation runtime](../reference/animation-runtime.md) — the
+  runtime `createThirdPersonController` + `<AnimatedCharacter>` the
+  third-person path is built on.
+- [Camera system](../reference/camera-system.md) — the runtime
+  `defineVirtualCamera` + `createCameraBrain` + `<CameraRig>` the
+  follow camera is built on.
 - [Animations](animations.md) — the `<Animator>` locomotion blend
   click-to-move drives.
 - [UI recipes](ui-recipes.md) — the ability-bar HUD surface.
-- [Recipe canon](../reference/recipe-canon.md) — the
-  retrieve-adapt-validate substrate these recipes live in.
+- [Recipe canon](../reference/recipe-canon.md) — the editor-tier
+  retrieve-adapt-validate substrate you discover these recipes in.
