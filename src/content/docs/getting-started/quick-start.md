@@ -64,6 +64,13 @@ Application source (`src/`, zero framework imports):
 | `src/state/game-store.ts` | Zustand store; one slice per concern. |
 | `src/input/use-input.ts` | Ref-based input hook (WASD + arrows + space). |
 
+Project data + entry registrations:
+
+| Path | What |
+|---|---|
+| `scripts/project.ts` | Project entry script. The `[entry].script` target the editor dynamic-imports on open; where `defineGameScript` / `defineSceneNodeKind` / `definePrefab` registrations live (ships with a minimal `defineGameScript` example). |
+| `scenes/main.scene.json` | Starter scene (camera + lights + a scripted cube). The editor reads `.scene.json` files from `scenes/`. |
+
 Framework + tooling (deletable on eject):
 
 | Path | What |
@@ -107,6 +114,7 @@ dev loop:
 | `vibesmith llm setup` | Guided provider-onboarding wizard. Coaches you through four access paths (local model / direct API key / gateway / use my coding assistant), detects existing config (env vars + local endpoints like Ollama), and writes `~/.config/vibesmith/config.toml`. Credentials are written as env-var references only — never inline keys. Shows a diff preview before the (atomic) write. Verify the result with `vibesmith doctor --llm-providers`. |
 | `vibesmith config show [--scope user\|project\|effective]` | Print the resolved config as TOML. `vibesmith config edit` opens the user-level config in `$EDITOR`; `vibesmith config path` prints its resolved location. |
 | `vibesmith add-extension <id>` | Install a standard extension. |
+| `vibesmith add-capability <id>` | Enable a runtime capability (`procgen`, `terrain`, `world-population`, …) **and** actuate the install: promotes the capability's vendored tarball into `package.json#dependencies` (+ `pnpm.overrides`), flips the `[capabilities]` flag in `vibesmith.toml`, then runs `pnpm install`. Idempotent. Editor-tier capabilities (e.g. `asset-catalogue`) ship inside the editor binary, so only the flag flips. `--skip-install` mutates the manifests without installing. Without an `<id>` it prints the known list. |
 | `vibesmith upgrade` | Pin-drift report + interactive bump. Auto-detects project shape: `vibesmith.toml` projects (caret semver pin), SHA-pinned consumers via `.vibesmith/config.ts` `frameworkRef`. Lists the commit subjects landing in the range before prompting. Flags: `--to <ref>` (target a non-HEAD ref), `--yes`, `--dry-run`, `--json`, `--refresh` (resync the bundled framework tarballs + re-install), `--no-install` (skip the post-refresh install). |
 | `vibesmith asset-pipeline optimize <path>` | Run the glTF optimize pipeline (drop unused channels, quantise, optionally Draco) on a single `.glb` or directory tree. Accepts `--tier LOW\|MEDIUM\|HIGH\|ULTRA` to apply the per-tier matrix (LOW/MEDIUM/HIGH add Draco; ULTRA preserves precision). `--out <path>` chooses the output; `--no-cache` reprocesses fresh outputs. |
 | `vibesmith asset-pipeline compress-textures <path>` | Re-encode embedded textures to WebP via per-slot presets (`albedo` lossy, `normal`/`orm` lossless, `emissive`/`ui` lossy). `--max-axis <pixels>` applies an aspect-preserving Lanczos3 resize (useful for per-tier variants). |
