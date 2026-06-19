@@ -91,10 +91,16 @@ Action names are typed `as const` at the call site, so
 - **`axis`** — analog.
   - `dimension: '1d'` → a `number` in `[-1, 1]` (a trigger, the
     mouse wheel).
-  - `dimension: '2d'` → a `Vec2` (a stick, a WASD composite).
+  - `dimension: '2d'` → a `Vec2` (a stick, a WASD composite, **mouse
+    look**).
   - `deadZone` (`0..1`) is a radial dead-zone applied before
     normalisation — magnitudes inside it read zero; outside it the
     value is rescaled so there's no value cliff at the edge.
+
+  A 2D axis fed by the `mouse-delta` source is **unbounded** — a mouse
+  flick is genuinely larger than a stick's `[-1, 1]`, so the value is the
+  raw per-frame pointer delta scaled by `sensitivity`, *not* clamped to
+  unit length. Leave `deadZone` at `0` for look.
 
 ### Binding types
 
@@ -102,6 +108,7 @@ Action names are typed `as const` at the call site, so
 |---|---|---|
 | `keyboard` | `{ code }` — a `KeyboardEvent.code` (layout-stable) | digital, or ±1 on an axis |
 | `mouse` | `{ button }` — `MouseEvent.button` index | digital |
+| `mouse-delta` | `{ sensitivity?, invertY?, axis?, pointerLock? }` — pointer `movementX/Y` | 2D (mouse look) or 1D (single-component turn) axis |
 | `gamepad` | `{ button }` | digital (trigger past 0.5 reads as held) |
 | `gamepad` | `{ axes, invertY? }` — one index (1D) or `[x, y]` (2D) | axis |
 | `touch` | `{ control, controlKind }` | digital / axis (virtual overlay) |
@@ -110,6 +117,43 @@ Action names are typed `as const` at the call site, so
 Several bindings on one action **fan in** — a key, a stick, and a
 touch control can all drive `"move"`; the strongest contributing
 source wins each frame.
+
+### Mouse look (`mouse-delta`)
+
+The canonical FPS / twin-stick **aim** source. A `mouse-delta` binding
+feeds a `2d` axis action from the pointer's per-frame `movementX` /
+`movementY` — the same `Vec2` shape a gamepad's right stick produces, so
+one `"look"` action fans in mouse *and* stick without the consumer hand-
+rolling `pointermove` or pointer-lock plumbing:
+
+```ts
+export const aim = defineInputMap({
+  id: 'aim',
+  actions: {
+    look: { kind: 'axis', dimension: '2d', deadZone: 0 },
+  },
+  bindings: {
+    look: [
+      // Mouse look — raw movementX/Y × sensitivity, optionally captured.
+      { device: 'mouse-delta', sensitivity: 0.4, invertY: false, pointerLock: true },
+      // Same action, the gamepad right stick — multi-device fan-in.
+      { device: 'gamepad', axes: [2, 3], invertY: true },
+    ],
+  },
+} as const);
+```
+
+- `sensitivity` (default `1`) scales the raw delta; `invertY` flips the Y
+  component (up-is-positive look schemes).
+- `pointerLock` (default `false`) opts the keyboard/mouse adapter into
+  **Pointer Lock** — on the next click it requests the OS capture the
+  cursor so `movementX/Y` keep flowing past the window edge (the FPS
+  infinite turn). The adapter reads `movementX/Y` either way; lock just
+  removes the edge stop. `<InputProvider pointerLock pointerLockElement={canvas}>`
+  is the React-surface equivalent for capturing a specific canvas.
+- The raw web input stays reachable — `movementX/Y` and the Pointer Lock
+  API are standard DOM; a consumer that wants a bespoke `pointermove`
+  gesture still adds its own listener.
 
 ## React surface
 
