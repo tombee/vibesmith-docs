@@ -27,9 +27,11 @@ defineGameScript({
     axis: z.enum(['x', 'y', 'z']).default('y'),
     enabled: z.boolean().default(true),
   }),
-  onTick: (ctx, params) => {
-    if (!params.enabled) return;
-    ctx.target.rotation[params.axis] += params.speed * ctx.dt;
+  onUpdate: (ctx, dt) => {
+    const p = ctx.parameters;
+    if (!p?.enabled) return;
+    const obj = ctx.object3D as { rotation: { x: number; y: number; z: number } };
+    obj.rotation[p.axis] += p.speed * dt;
   },
 });
 ```
@@ -50,14 +52,14 @@ Bind the script to a scene node in your JSX:
 Three consumers read the same Zod object:
 
 1. **The runtime** reads `parameters` to validate and provide
-   defaults to `onTick`.
+   defaults via `ctx.parameters` in `onUpdate`.
 2. **The inspector panel** (`ScriptParametersPanel`) reads the
    schema to render controls — a 0–20 slider for `speed`, a
    dropdown for `axis`, a checkbox for `enabled`. Min / max /
    default come from the Zod constraints; the description
    becomes the tooltip.
 3. **Your AI coding assistant** reads the schema *in the same
-   file as the `onTick` body*. When you ask it "add an
+   file as the `onUpdate` body*. When you ask it "add an
    acceleration parameter," it has the full contract in front
    of it — no registry crawl, no schema cross-check, no
    framework-flavoured decorators to learn.
@@ -89,7 +91,7 @@ ScriptParametersPanel:
 
 - **Don't put functions in `parameters`.** A field like
   `onPlayerProximity: () => void` is procedural — it should be
-  code inside `onTick`, not a parameter. The framework's
+  code inside `onUpdate`, not a parameter. The framework's
   data-shape rule: *data-shape what is naturally parametric;
   leave what is naturally procedural as code.*
 - **Don't add `@param` JSDoc comments hoping the inspector

@@ -1,6 +1,6 @@
 ---
 title: 'Writing a game script'
-description: 'How a project script registers behaviour via defineGameScript, what the GameScriptContext gives you, and how the lifecycle (mount → tick → unmount) sequences against R3F.'
+description: 'How a project script registers behaviour via defineGameScript, what the GameScriptContext gives you, and how the lifecycle (onStart → onUpdate → onDestroy) sequences against R3F.'
 ---
 
 For projects opened by the vibesmith desktop binary (folders with
@@ -18,7 +18,7 @@ import { defineGameScript } from '@vibesmith/runtime';
 
 defineGameScript({
   id: 'spin-cube',
-  onTick: (ctx, dt) => {
+  onUpdate: (ctx, dt) => {
     const obj = ctx.object3D as { rotation: { y: number } };
     obj.rotation.y += dt * 0.6;
   },
@@ -28,36 +28,60 @@ defineGameScript({
 That's it. The binary dynamic-imports `scripts/project.ts` when
 the project opens, the import side-effect registers `spin-cube`
 in the runtime registry, and any scene node carrying
-`script: "spin-cube"` ticks the `onTick` handler from R3F's frame
+`script: "spin-cube"` runs the `onUpdate` handler from R3F's frame
 loop. The starter scene's `cube` node has that field set, so the
 cube spins.
 
-## The `defineGameScript` surface
+## The `defineGameScript` lifecycle
+
+The hooks are Unity-named (`Start` / `Update` / `OnDestroy`), so a
+Unity refugee gets the convention for free. The common four:
 
 ```ts
 defineGameScript({
-  id: string,                                       // required, project-unique
-  onMount?:   (ctx: GameScriptContext) => void | (() => void),
-  onTick?:    (ctx: GameScriptContext, dtSeconds: number) => void,
+  id: string,                                        // required, project-unique
+  onStart?:   (ctx: GameScriptContext) => void | (() => void),
+  onUpdate?:  (ctx: GameScriptContext, dtSeconds: number) => void,
   onIntent?:  (ctx: GameScriptContext, intent: unknown) => void,
-  onUnmount?: (ctx: GameScriptContext) => void,
+  onDestroy?: (ctx: GameScriptContext) => void,
 });
 ```
 
 | Hook | When |
 |------|------|
-| `onMount` | Once when the scene node mounts. Return a teardown to skip `onUnmount`. |
-| `onTick` | Per frame while the project is playing. `dt` is seconds since last frame. |
-| `onIntent` | When an intent broadcast targets this object (today the bus is a noop; intent surface arrives in a later slice). |
-| `onUnmount` | Once when the scene node unmounts, unless `onMount` returned a teardown. |
+| `onStart` | Once when the scene node mounts. Return a teardown to skip `onDestroy`. |
+| `onUpdate` | Per render frame while the project is playing. `dt` is wall-clock seconds since last frame. |
+| `onIntent` | When an intent is broadcast on the project bus. |
+| `onDestroy` | Once when the scene node unmounts, unless `onStart` returned a teardown. |
+
+The full set adds `onFixedUpdate` (per physics substep, when a
+`<PhysicsScene>` is mounted), `onLateUpdate` (after every script's
+`onUpdate` + physics readback), `onEnable` / `onDisable`
+(pool-friendly enabled-state edges), `onInput` (edge-driven input),
+and `onSceneEnter` / `onSceneExit` (scene-flow transitions). See the
+[extending reference](/vibesmith-docs/reference/extending/) for the
+whole table.
+
+> The old `onMount` / `onTick` / `onUnmount` names still compile as
+> **deprecated aliases** for `onStart` / `onUpdate` / `onDestroy`,
+> but reach for the canonical names — the aliases are slated for
+> removal.
 
 ## `GameScriptContext`
 
+The context the binary injects carries the node, the clock, the
+intent dispatcher, and the resolved `parameters` (when the script
+declares a Zod schema):
+
 ```ts
 interface GameScriptContext {
-  object3D: unknown;     // the live THREE.Object3D the script is attached to
-  readonly time: number; // wall-clock seconds; refreshed per frame
+  object3D: unknown;        // the live THREE.Object3D the script is attached to
+  readonly time: number;    // wall-clock seconds; refreshed per frame
   dispatch: (intent: unknown) => void;
+  readonly parameters?: Readonly<...>; // resolved params when a schema is set
+  // …plus optional substrate handles, each present only when that
+  //    substrate is mounted: physics, vfx, decals, animator, camera,
+  //    cutscene, quest, npc, scene (scene-flow), save, input.
 }
 ```
 
@@ -65,13 +89,20 @@ interface GameScriptContext {
   `rotation` / `scale` directly. The type is `unknown` so projects
   don't need to pin their own copy of Three; cast inside the
   script: `ctx.object3D as Mesh`.
-- **`time`** — monotonic seconds. Useful for time-based animation
-  that doesn't drift from accumulated `dt`. Refreshed every frame
-  before `onTick` fires.
-- **`dispatch(intent)`** — sends an intent into the project's
-  network adapter. Today this is wired to a noop until the
-  intent-bus slice lands; the surface is stable so scripts can
-  start adopting it.
+- **`time`** — wall-clock seconds the binary feeds. Useful for
+  time-based animation that doesn't drift from accumulated `dt`.
+  Refreshed every frame before `onUpdate` fires.
+- **`dispatch(intent)`** — routes an intent through the active
+  networking transport (an in-memory loopback by default, so
+  single-player works with zero config). Gameplay code stays
+  authority-agnostic.
+- **`parameters`** — the resolved parameter object when the script
+  declares `parameters: z.object({...})`; narrows to the inferred
+  schema type at the call site.
+- **substrate handles** — `physics`, `vfx`, `animator`, `camera`,
+  `scene`, `input`, `save`, and the rest are present only when the
+  matching substrate is mounted; a script can early-return when one
+  is absent.
 
 ## Lifecycle, concretely
 
@@ -90,9 +121,9 @@ scene unmounts (or project closes)
 ```
 
 The runner is idempotent — `mount()` / `unmount()` repeated calls
-are noops. Re-mount after unmount is supported. If `onMount`
+are noops. Re-mount after unmount is supported. If `onStart`
 throws, the runner reverts to unmounted state + skips subsequent
-ticks; if `onTick` throws, the error surfaces via the runner's
+ticks; if `onUpdate` throws, the error surfaces via the runner's
 `onError` hook (the binary wires this to the developer console).
 
 ## What you can do inside a script
@@ -134,9 +165,9 @@ script are fine — the registry holds all of them. Scene nodes
 reference by id:
 
 ```ts
-defineGameScript({ id: 'spin-cube', onTick: (ctx, dt) => { /* … */ } });
-defineGameScript({ id: 'orbit-light', onTick: (ctx, dt) => { /* … */ } });
-defineGameScript({ id: 'idle-camera-sway', onTick: (ctx, dt) => { /* … */ } });
+defineGameScript({ id: 'spin-cube', onUpdate: (ctx, dt) => { /* … */ } });
+defineGameScript({ id: 'orbit-light', onUpdate: (ctx, dt) => { /* … */ } });
+defineGameScript({ id: 'idle-camera-sway', onUpdate: (ctx, dt) => { /* … */ } });
 ```
 
 And in the scene file:
@@ -166,7 +197,7 @@ The binary surfaces script errors in two places:
   threw inside the top-level call) → the viewport's error banner
   with the raw error in the "Technical details" disclosure. The
   scene doesn't mount.
-- **Tick errors** (`onTick` threw mid-frame) → logged via
+- **Tick errors** (`onUpdate` threw mid-frame) → logged via
   `console.error`; the runner keeps ticking on subsequent frames
   (one bad frame doesn't kill the script). A future slice will
   surface these in a dedicated panel.

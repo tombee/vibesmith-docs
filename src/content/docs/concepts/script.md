@@ -6,9 +6,9 @@ description: 'A script is a piece of code attached to an object in your scene th
 A **script** is code that runs every frame on a part of your
 [scene](scene) — typically attached to one object (a player
 character, a moving platform, a camera follow rig). If the object
-mounts, the script's `onMount` runs. If the frame ticks, the
-script's `onTick` runs. If the object unmounts, the script's
-`onUnmount` runs.
+mounts, the script's `onStart` runs. Every frame, the script's
+`onUpdate` runs. If the object unmounts, the script's `onDestroy`
+runs.
 
 That's the whole loop.
 
@@ -21,7 +21,7 @@ import { defineGameScript } from '@vibesmith/runtime';
 
 defineGameScript({
   id: 'spin-cube',
-  onTick: (ctx, dt) => {
+  onUpdate: (ctx, dt) => {
     const obj = ctx.object3D as { rotation: { y: number } };
     obj.rotation.y += dt * 0.6;
   },
@@ -29,7 +29,7 @@ defineGameScript({
 ```
 
 You give the script an `id` (`"spin-cube"`), define what it does
-(`onTick` rotates the attached object), and **bind it to a scene
+(`onUpdate` rotates the attached object), and **bind it to a scene
 node** by setting `script="spin-cube"` on the JSX:
 
 ```tsx
@@ -61,14 +61,19 @@ deliberately doesn't do that:
 
 | Hook | When it runs |
 |------|--------------|
-| `onMount` | Once when the object the script is attached to mounts. |
-| `onTick` | Once per frame while the project is playing. `dt` is seconds since last frame. |
+| `onStart` | Once when the object the script is attached to mounts. Return a teardown to skip `onDestroy`. |
+| `onUpdate` | Once per render frame while the project is playing. `dt` is wall-clock seconds since last frame. |
 | `onIntent` | When an [intent](intent) is dispatched at this object. |
-| `onUnmount` | Once when the object unmounts. |
+| `onDestroy` | Once when the object unmounts. |
 
 You only define the hooks you need. A purely-visual rotator only
-needs `onTick`. A character controller might use `onMount` +
-`onTick` + `onIntent` + `onUnmount`.
+needs `onUpdate`. A character controller might use `onStart` +
+`onUpdate` + `onIntent` + `onDestroy`. The full set adds
+`onFixedUpdate`, `onLateUpdate`, `onEnable` / `onDisable`,
+`onInput`, and `onSceneEnter` / `onSceneExit` — see the
+[extending reference](/vibesmith-docs/reference/extending/). (The
+old `onMount` / `onTick` / `onUnmount` names still work as
+deprecated aliases, but prefer the canonical ones above.)
 
 ## What can a script do?
 

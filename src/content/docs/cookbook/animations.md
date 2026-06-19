@@ -68,7 +68,7 @@ const characterGraph = defineAnimationGraph({
 
 defineGameScript({
   id: 'character-controller',
-  onTick: (ctx) => {
+  onUpdate: (ctx) => {
     const animator = ctx.animator?.('character');
     if (!animator) return;
     animator.set('speed', currentSpeed(ctx));
