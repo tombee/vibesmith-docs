@@ -30,17 +30,24 @@ defineGameScript({
 
 You give the script an `id` (`"spin-cube"`), define what it does
 (`onUpdate` rotates the attached object), and **bind it to a scene
-node** by setting `script="spin-cube"` on the JSX:
+node** by setting the `script` field on that node in your
+[scene](scene) JSON:
 
-```tsx
-<mesh script="spin-cube">
-  <boxGeometry />
-  <meshStandardMaterial color="orange" />
-</mesh>
+```jsonc
+// scenes/main.scene.json
+{
+  "id": "spinning-cube",
+  "kind": "mesh",
+  "geometry": { "kind": "box" },
+  "material": { "kind": "standard", "color": "orange" },
+  "script": "spin-cube"
+}
 ```
 
-When the editor mounts that mesh, the runtime registers `spin-cube`
-against the live Three.js object, and the cube starts rotating.
+When the editor loads that node, the runtime registers `spin-cube`
+against the live Three.js object, and the cube starts rotating. The
+behaviour lives in code (`scripts/`); the binding lives in data
+(the `.scene.json`).
 
 ## Why is it just a function?
 

@@ -18,7 +18,110 @@ If you need per-object materials, per-object animations, or
 deeply different geometry, instancing isn't the answer — split
 into a small set of *types* and instance each type.
 
-## The drei way (recommended)
+## The framework way — `defineInstancedKind` (start here)
+
+Don't hand-roll a `<Instances>` wrapper or a raw `<instancedMesh>`
+component for instanced content that belongs in your scene. The
+framework primitive for *"N entities that share geometry +
+material"* is **`defineInstancedKind`** from `@vibesmith/runtime` —
+the instanced sibling of `defineSceneNodeKind`. You declare the
+geometry / material / capacity **once**; the SceneRenderer collapses
+every scene-node entry of that `kind` into a single
+`THREE.InstancedMesh` (N entries = 1 draw call) while keeping each
+entry **independently selectable, inspectable, and MCP-addressable**
+in the scene tree. A hand-rolled `<Instances>` block is one opaque
+React node the inspector, hierarchy, and selection can't see into.
+
+```ts
+// scripts/grass.ts
+import { Matrix4, MeshStandardMaterial, PlaneGeometry, Vector3 } from 'three';
+import { z } from 'zod';
+import { defineInstancedKind } from '@vibesmith/runtime';
+
+defineInstancedKind({
+  id: 'acme/grass-blade',
+  geometry: new PlaneGeometry(0.1, 0.6),
+  material: new MeshStandardMaterial({ color: '#3b6b3b' }),
+  maxInstances: 4096,
+  params: z.object({
+    position: z.tuple([z.number(), z.number(), z.number()]),
+    rotation_y: z.number().default(0),
+    scale: z.number().default(1),
+  }),
+  // Called once per entry per frame with a stable slot index, the
+  // Zod-validated params, and a reusable Matrix4 you fill in place.
+  updateInstance: (_slot, { position, rotation_y, scale }, m) => {
+    m.makeRotationY(rotation_y)
+      .scale(new Vector3(scale, scale, scale))
+      .setPosition(position[0], position[1], position[2]);
+  },
+});
+```
+
+Then every entry of that `kind` in your [scene](/vibesmith-docs/concepts/scene/) JSON
+batches into one draw call:
+
+```jsonc
+// scenes/main.scene.json
+{
+  "nodes": [
+    { "id": "blade-0", "kind": "acme/grass-blade", "params": { "position": [0, 0, 0] } },
+    { "id": "blade-1", "kind": "acme/grass-blade", "params": { "position": [1, 0, 0] } },
+    { "id": "blade-2", "kind": "acme/grass-blade", "params": { "position": [2, 0, 0] } }
+  ]
+}
+```
+
+- `id` follows the `<owner>/<surface>` convention (same as scene-node
+  kind / HUD / theme ids).
+- `maxInstances` is pre-allocated at mount — Three's `InstancedMesh`
+  doesn't grow — so pick the worst-case count. Overflow logs a
+  one-time warning and the late entries stay un-rendered until
+  earlier ones leave.
+- `updateInstance` must be **deterministic** on `params` so snapshot
+  scrubbing replays identically.
+
+See the
+[extending reference](/vibesmith-docs/reference/extending/) for
+where `defineInstancedKind` sits among the consumer primitives, and
+[engine patterns](/vibesmith-docs/reference/engine-patterns/) §
+*Batched instanced kinds* for the `defineInstancedKind` vs
+`defineSceneNodeKind` decision and the Unity / Godot / Unreal /
+Bevy equivalents.
+
+## The recipe way — curated instanced placement
+
+For the common scatter / crowd cases, you don't even author the
+placement by hand. The
+[recipe library](/vibesmith-docs/reference/recipe-canon/) ships
+production-shaped, tier-aware, snapshot-deterministic instanced
+recipes — `vegetation-scatter`, `props-clutter`, `debris-rubble`,
+`projectiles`, `crowd-agents`, `modular-kit` — each pairing a Zod
+param schema (count / area / per-instance variation / seed), per-tier
+instance caps wired to adaptive rendering, and a pure `place(...)`
+reference fn. You supply the geometry + material (a kit-pack module,
+a Synty tree, a character mesh) and wire the recipe's placement to
+`defineInstancedKind`. Retrieve → adapt → validate beats hand-rolling
+the scatter math:
+
+```ts
+import { findRecipes, getRecipe } from '@vibesmith/recipe-canon';
+
+const matches = findRecipes('grass scatter across a meadow');
+const scatter = getRecipe(matches[0].id); // e.g. 'vegetation-scatter'
+```
+
+## Escape hatches — raw R3F instancing
+
+When you genuinely need instancing *outside* the scene-node model —
+a transient effect that never belongs in the `.scene.json`, a
+self-contained R3F component you're embedding, or an experiment —
+the raw R3F paths below still work. Treat them as the escape hatch,
+not the default: instances authored this way are **not** scene-tree
+entries, so the inspector, hierarchy, selection, and MCP can't
+address them.
+
+### The drei way
 
 `<Instances>` from `@react-three/drei` wraps the `InstancedMesh`
 plumbing and lets you author instances declaratively.
@@ -52,7 +155,7 @@ export function PropClutter({ placements }: { placements: Placement[] }) {
 - `color` is per-instance via `<Instance>`'s prop; drei sets up
   the instanced color attribute automatically.
 
-## The raw Three way
+### The raw Three way
 
 When drei's declarative `<Instance>` doesn't cover your needs
 (e.g. you want to push updates from `useFrame` without
@@ -139,6 +242,14 @@ this up automatically; for raw `<instancedMesh>`, attach a
 
 ## Related
 
+- [How to extend vibesmith](/vibesmith-docs/reference/extending/) —
+  where `defineInstancedKind` sits among the consumer primitives.
+- [Engine patterns](/vibesmith-docs/reference/engine-patterns/) §
+  *Batched instanced kinds* — `defineInstancedKind` vs
+  `defineSceneNodeKind` + Unity / Godot / Unreal / Bevy equivalents.
+- [Recipe canon](/vibesmith-docs/reference/recipe-canon/) — the
+  curated instanced-placement recipes (vegetation / props / debris /
+  projectiles / crowds / kits).
 - [Performance debugging](perf-debugging.md) — verifying the
   draw-call reduction with `gl.info`.
 - [Anti-patterns](../anti-patterns.md#1-allocating-per-frame-in-useframe)

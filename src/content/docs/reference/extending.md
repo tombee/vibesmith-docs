@@ -18,17 +18,28 @@ snapshot, MCP) all work without further effort.
 | Textured plane, lit light, empty transform anchor, text label, camera             | **Builtin node kinds** (`mesh`, `directional-light`, `perspective-camera`, …) |
 | Behaviour attached to a node — animation driver, state machine, interaction       | **`defineGameScript`** + `script: "<id>"` on the node |
 | Reusable structural pattern — deck stack, hand fan, NPC body kit, badge composite | **`definePrefab`**                                 |
-| A genuinely new node type                                                         | **Almost never.** Open a framework issue — it goes in builtins. |
+| Many of the *same* homogeneous thing — grass, rocks, debris, projectiles, units, scatter clutter (~20+ entries) | **`defineInstancedKind`** + the [recipe library](/vibesmith-docs/reference/recipe-canon/) |
+| A genuinely new heterogeneous node type                                           | **Almost never.** Open a framework issue — it goes in builtins. |
 
-That last row is the load-bearing one. Unity / Godot / Unreal don't
-let consumers register new node types — the node-type space is
-fixed by the engine, and every "I need a textured plane" / "I need
-a card-flight driver" / "I need a deck stack" maps onto one of the
-three primitives above. vibesmith follows the same model. If you
-catch yourself reaching for `defineSceneNodeKind` (the framework-
-internal factory that registers new node types), step back to this
-table — almost always one of the three primitives is the right
-answer.
+The last row is the load-bearing one. Unity / Godot / Unreal don't
+let consumers register new *heterogeneous* node types — the
+node-type space is fixed by the engine, and every "I need a textured
+plane" / "I need a card-flight driver" / "I need a deck stack" maps
+onto one of the three primitives above. vibesmith follows the same
+model. If you catch yourself reaching for `defineSceneNodeKind` (the
+framework-internal factory that registers new heterogeneous node
+types), step back to this table — almost always one of the three
+primitives is the right answer.
+
+The one consumer-facing kind factory is the **performance** case in
+the second-to-last row: `defineInstancedKind` for *many of the same
+homogeneous thing* (§4). It is not a way to register an arbitrary new
+node type — it batches N entries that share one geometry + material
+into a single GPU-instanced draw call while keeping each entry
+independently addressable. Reach for it when you'd otherwise scatter
+~20+ `mesh` nodes (or hand-roll a drei `<Instances>` block); reach
+for the recipe library when the placement itself (scatter / crowd /
+debris math) is the hard part.
 
 ## 1. Builtins
 
@@ -225,6 +236,85 @@ does.
 > composition is data, not rendering. See
 > [Prefab system](prefab-system.md) § *Pure-data structural
 > templates*.
+
+## 4. Instanced kinds — `defineInstancedKind`
+
+`defineInstancedKind` (from `@vibesmith/runtime`, sibling of the
+framework-internal `defineSceneNodeKind`) is the **performance
+primitive** for *many of the same homogeneous thing*: tiles, grass,
+rocks, debris, projectiles, units, scatter clutter. You declare the
+geometry / material / capacity **once**; the SceneRenderer collapses
+every scene-node entry of that `kind` into a single
+`THREE.InstancedMesh` — N entries = one draw call — while keeping
+each entry **independently selectable / inspectable / MCP-addressable**
+(it mounts an empty addressable placeholder per entry alongside the
+shared mesh).
+
+```ts
+// scripts/grass.ts
+import { Matrix4, MeshStandardMaterial, PlaneGeometry, Vector3 } from 'three';
+import { z } from 'zod';
+import { defineInstancedKind } from '@vibesmith/runtime';
+
+defineInstancedKind({
+  id: 'my-game/grass-blade',                 // <owner>/<surface>
+  geometry: new PlaneGeometry(0.1, 0.6),
+  material: new MeshStandardMaterial({ color: '#3b6b3b' }),
+  maxInstances: 4096,                         // pre-allocated; doesn't grow
+  params: z.object({
+    position: z.tuple([z.number(), z.number(), z.number()]),
+    rotation_y: z.number().default(0),
+    scale: z.number().default(1),
+  }),
+  // Called once per entry per frame: stable slot, validated params,
+  // a reusable Matrix4 you fill in place. Keep it deterministic so
+  // snapshot scrubbing replays identically.
+  updateInstance: (_slot, { position, rotation_y, scale }, m) => {
+    m.makeRotationY(rotation_y)
+      .scale(new Vector3(scale, scale, scale))
+      .setPosition(position[0], position[1], position[2]);
+  },
+});
+```
+
+Every entry of the kind in scene JSON batches into the shared mesh:
+
+```jsonc
+// scenes/main.scene.json
+{
+  "nodes": [
+    { "id": "blade-0", "kind": "my-game/grass-blade", "params": { "position": [0, 0, 0] } },
+    { "id": "blade-1", "kind": "my-game/grass-blade", "params": { "position": [1, 0, 0] } }
+  ]
+}
+```
+
+**Use `defineInstancedKind` over `defineSceneNodeKind`** when the
+content is homogeneous and there are ~20+ of it; use
+`defineSceneNodeKind` (framework-internal) only for heterogeneous
+one-off kinds. See
+[engine patterns](/vibesmith-docs/reference/engine-patterns/) §
+*Batched instanced kinds* for the full decision table + capacity /
+slot-stability semantics + Unity / Godot / Unreal / Bevy equivalents.
+
+**Don't hand-roll a drei `<Instances>` wrapper** for instanced scene
+content. A `<Instances>` block is one opaque React node the
+inspector / hierarchy / selection / MCP can't see into;
+`defineInstancedKind` gives the same single draw call *and* keeps
+every entry a real scene-tree node. The raw R3F paths
+(`<Instances>`, raw `<instancedMesh>` + `setMatrixAt`) stay available
+as an escape hatch for instancing that genuinely lives outside the
+`.scene.json` — see the
+[instancing cookbook](/vibesmith-docs/cookbook/instancing/).
+
+**When the placement is the hard part** — Poisson scatter across an
+area, a crowd field, debris distribution — reach for the curated
+instanced recipes in
+[recipe canon](/vibesmith-docs/reference/recipe-canon/)
+(`vegetation-scatter` / `props-clutter` / `debris-rubble` /
+`projectiles` / `crowd-agents` / `modular-kit`). Each ships a
+deterministic, tier-aware `place(...)` reference fn; you supply the
+geometry + material and wire it to `defineInstancedKind`.
 
 ## Worked example — full extension stack
 
@@ -429,11 +519,20 @@ import { defineSceneNodeKind } from '@vibesmith/runtime';
 import { defineGameScript, definePrefab } from '@vibesmith/runtime';
 ```
 
+> **Note:** `defineInstancedKind` (§4) *is* a public consumer-facing
+> import from `@vibesmith/runtime` — the rename above is specific to
+> `defineSceneNodeKind` (the framework-internal heterogeneous-kind
+> factory), not the instanced performance primitive.
+
 ## Cross-references
 
 - [engine-patterns](/reference/engine-patterns/) — Unity / Godot /
   Unreal ↔ vibesmith translation table; per-builtin vocabulary
-  lives here.
+  lives here. § *Batched instanced kinds* covers
+  `defineInstancedKind`.
+- [recipe-canon](/vibesmith-docs/reference/recipe-canon/) — the
+  curated instanced-placement recipes (vegetation / props / debris /
+  projectiles / crowds / kits) `defineInstancedKind` consumes.
 - [scene-construction](/reference/scene-construction/) — Recipe →
   Generator → Composition → Renderer; how prefabs / scripts /
   builtins fit into the broader scene model.
